@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import math
+
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsTextItem
-from PyQt5.QtGui import QImage, QPixmap, QTransform, QFont, QBrush
+from PyQt5.QtGui import QImage, QPixmap, QTransform, QFont, QBrush, QPen, QPainter, QPainterPath
 
 class QGaugeView(QGraphicsView):
   
@@ -11,12 +13,10 @@ class QGaugeView(QGraphicsView):
         QGraphicsView.__init__(self)
 
         self.scene = QGraphicsScene()
-        #self.scene.setSceneRect(0,0,1280,300)
         
         self.setScene(self.scene)
         self.setStyleSheet("border: 0px; background: transparent;")
         
-
 class airspeedGauge(QGaugeView):
   
     def __init__(self):
@@ -25,27 +25,270 @@ class airspeedGauge(QGaugeView):
         self.scene.setSceneRect(0,0,300,300)
         self.setTransform(QTransform().scale(0.85, 0.85), True)
 
-        pixmap = QPixmap('/var/fspanel/images/speed.png')
+        self.setRenderHint(QPainter.Antialiasing, True)
+        
+        self.zeroAngle = -180
+        
+    def initialize(self, data):
+      
+        self.vso = data['vs0']
+        self.vne = data['vne']
+        self.max = data['max']
+        
+        delta = 300 / (self.max - 50)
+        
+        self.scene.clear()
+        
+        pixmap = QPixmap('/var/fspanel/images/speed-plate.png')
         self.gauge = self.scene.addPixmap(pixmap)
+        
+        path = QPainterPath()
+        pen = QPen(Qt.white, 12, Qt.SolidLine)
+        a1 = 270 - ((data['vfe']-50) * delta + 30)
+        a2 = (data['vfe'] - data['vs0']) * delta
+        path.arcMoveTo(40, 40, 220, 220, a1)
+        path.arcTo(40, 40, 220, 220, a1, a2)      
+        self.scene.addPath(path, pen)
+        
+        path = QPainterPath()
+        pen = QPen(Qt.green, 10, Qt.SolidLine)
+        a1 = 270 - ((data['vno']-50) * delta + 30)
+        a2 = (data['vno'] - data['vs1']) * delta
+        path.arcMoveTo(50, 50, 200, 200, a1)
+        path.arcTo(50, 50, 200, 200, a1, a2)
+        self.scene.addPath(path, pen)
+      
+        path = QPainterPath()
+        pen = QPen(Qt.yellow, 10, Qt.SolidLine)
+        a1 = 270 - ((data['vne']-50)*delta + 30)
+        a2 = (data['vne'] - data['vno']) * delta
+        path.arcMoveTo(50, 50, 200, 200, a1)
+        path.arcTo(50, 50, 200, 200, a1, a2)
+        self.scene.addPath(path, pen)
+        
+        for a in range(50, data['max']+1, 10):
 
+            alpha = self.zeroAngle + 30 + (a - 50) * delta
+            dx = math.cos(math.radians(alpha-90))
+            dy = math.sin(math.radians(alpha-90))
+
+            if (a % 50 == 0):
+              R = 75
+              font = QFont('Verdana', 12, QFont.Light)
+              text = self.scene.addSimpleText(str(a), font)
+              text.setPos(135+50*dx,140+50*dy)
+              text.setBrush(Qt.white)
+            else:
+              R = 90
+              
+            if (a == self.vne):
+              R = 75
+              pen = QPen(Qt.red, 3, Qt.SolidLine)
+            else:
+              pen = QPen(Qt.white, 3, Qt.SolidLine)
+
+            path = QPainterPath()
+            path.moveTo(150+110*dx, 150+110*dy)
+            path.lineTo(150+R*dx, 150+R*dy)
+            self.scene.addPath(path, pen)
+            
         pixmap = QPixmap('/var/fspanel/images/speed-dial.png')
         self.needle = self.scene.addPixmap(pixmap)
         self.needle.setTransformOriginPoint(QPoint(150,150))
         
-        self.zeroAngle = -180
-        self.setValue({"speed":0})
+        font = QFont('Arial', 14, QFont.Light)
+        self.speed = self.scene.addSimpleText('0', font)
+        self.speed.setPos(135,185)
+        self.speed.setBrush(Qt.yellow)
         
+        self.setValue({"speed":0})
+
     def setValue(self, value):
       if "speed" in value:
         speed = int(value["speed"] * 1.852)
-        if (speed <= 0): angle = 0
-        elif (speed <= 50): angle = speed * 0.25
-        elif (speed <= 80): angle = 12.5 + (speed - 50) * 1.38
-        elif (speed <= 245): angle = 54 + (speed - 80) * 1.8
-        else: angle = 352
+        delta = 300 / (self.max - 50)
+        if (speed < 50): angle = 0
+        elif (speed <= self.max): angle = 30 + (speed - 50) * delta
+        else: angle = 300
+        self.needle.setRotation(self.zeroAngle + angle)
+        self.speed.setText('{:>3}'.format(speed))
+
+
+class accelerometerGauge(QGaugeView):
+  
+    def __init__(self):
+        QGaugeView.__init__(self)
+
+        self.scene.setSceneRect(0,0,300,300)
+        self.setTransform(QTransform().scale(0.85, 0.85), True)
+
+        self.setRenderHint(QPainter.Antialiasing, True)
+        
+        pixmap = QPixmap('/var/fspanel/images/g-unit-plate.png')
+        self.gauge = self.scene.addPixmap(pixmap)
+        
+        path = QPainterPath()
+        pen = QPen(Qt.red, 15, Qt.SolidLine)
+        a1 = 55
+        a2 = 5
+        path.arcMoveTo(45, 45, 210, 210, a1)
+        path.arcTo(45, 45, 210, 210, a1, a2)
+        self.scene.addPath(path, pen)
+      
+        path = QPainterPath()
+        pen = QPen(Qt.yellow, 15, Qt.SolidLine)
+        a1 = 65
+        a2 = 20
+        path.arcMoveTo(45, 45, 210, 210, a1)
+        path.arcTo(45, 45, 210, 210, a1, a2)
+        self.scene.addPath(path, pen)
+      
+        path = QPainterPath()
+        pen = QPen(Qt.green, 15, Qt.SolidLine)
+        a1 = 85
+        a2 = 170
+        path.arcMoveTo(45, 45, 210, 210, a1)
+        path.arcTo(45, 45, 210, 210, a1, a2)
+        self.scene.addPath(path, pen)
+      
+        path = QPainterPath()
+        pen = QPen(Qt.yellow, 15, Qt.SolidLine)
+        a1 = 255
+        a2 = 20
+        path.arcMoveTo(45, 45, 210, 210, a1)
+        path.arcTo(45, 45, 210, 210, a1, a2)
+        self.scene.addPath(path, pen)
+      
+        path = QPainterPath()
+        pen = QPen(Qt.red, 15, Qt.SolidLine)
+        a1 = 275
+        a2 = 30
+        path.arcMoveTo(45, 45, 210, 210, a1)
+        path.arcTo(45, 45, 210, 210, a1, a2)
+        self.scene.addPath(path, pen)
+     
+        g = 6
+        
+        for a in range(25):
+
+          alpha = 30 - (a * 10)
+          dx = math.cos(math.radians(alpha-90))
+          dy = math.sin(math.radians(alpha-90))
+            
+          if (a % 2 == 0):
+            R = 75
+            X = R * math.cos(math.radians(alpha-90))
+            Y = R * math.sin(math.radians(alpha-90))
+            font = QFont('Verdana', 12, QFont.Light)
+            text = self.scene.addSimpleText(str(abs(g)), font)
+            text.setPos(145+R*dx,142+R*dy)
+            text.setBrush(Qt.gray)
+            g = g - 1
+            	    
+          path = QPainterPath()
+          path.moveTo(150+110*dx, 150+110*dy)
+          path.lineTo(150+90*dx, 150+90*dy)
+          if (a % 2 == 0):
+            pen = QPen(Qt.gray, 3, Qt.SolidLine)
+          else:
+            pen = QPen(Qt.white, 3, Qt.SolidLine)
+          self.scene.addPath(path, pen)
+        
+        pixmap = QPixmap('/var/fspanel/images/speed-dial.png')
+        self.needle = self.scene.addPixmap(pixmap)
+        self.needle.setTransformOriginPoint(QPoint(150,150))
+        
+        self.zeroAngle = -90
+        self.setValue({"load":0})
+        
+    def setValue(self, value):
+        if "load" in value:
+          load = value["load"]
+        angle = load * 20
         self.needle.setRotation(self.zeroAngle + angle)
 
+      
+class manifoldGauge(QGaugeView):
+  
+    def __init__(self):
+        QGaugeView.__init__(self)
 
+        self.scene.setSceneRect(0,0,300,300)
+        self.setTransform(QTransform().scale(0.85, 0.85), True)
+
+        self.setRenderHint(QPainter.Antialiasing, True)
+        
+        pixmap = QPixmap('/var/fspanel/images/speed-plate.png')
+        self.gauge = self.scene.addPixmap(pixmap)
+        
+        for a in range(10, 36, 1):
+
+            alpha = -175 + (a - 10) * 170 / 25
+            dx = math.cos(math.radians(alpha-90))
+            dy = math.sin(math.radians(alpha-90))
+
+            if (a % 5 == 0):
+              R = 90
+              font = QFont('Verdana', 12, QFont.Light)
+              text = self.scene.addSimpleText(str(a), font)
+              text.setPos(135 + 65 * dx, 140 + 65 * dy)
+              text.setBrush(Qt.white)
+            else:
+              R = 100
+              
+            pen = QPen(Qt.white, 3, Qt.SolidLine)
+
+            path = QPainterPath()
+            path.moveTo(150+110*dx, 150+110*dy)
+            path.lineTo(150+R*dx, 150+R*dy)
+            self.scene.addPath(path, pen)
+            
+        for a in range(3, 19, 1):
+
+            alpha = 175 - a * a / 2
+            dx = math.cos(math.radians(alpha-90))
+            dy = math.sin(math.radians(alpha-90))
+
+            if (a % 2 == 0):
+              R = 95
+              font = QFont('Verdana', 10, QFont.Light)
+              text = self.scene.addSimpleText('{:2d}'.format(a), font)
+              text.setPos(138 + 80 * dx, 142 + 80 * dy)
+              text.setBrush(Qt.white)
+            else:
+              R = 100
+              
+            pen = QPen(Qt.white, 3, Qt.SolidLine)
+
+            path = QPainterPath()
+            path.moveTo(150+110*dx, 150+110*dy)
+            path.lineTo(150+R*dx, 150+R*dy)
+            self.scene.addPath(path, pen)
+            
+        pixmap = QPixmap('/var/fspanel/images/speed-dial.png')
+        self.pressure = self.scene.addPixmap(pixmap)
+        self.pressure.setTransformOriginPoint(QPoint(150,150))
+        self.fuelflow = self.scene.addPixmap(pixmap)
+        self.fuelflow.setTransformOriginPoint(QPoint(150,150))
+      
+        self.setValue({"man":0, "flow":0})
+        
+    def setValue(self, value):
+        if "man" in value:
+          man = value["man"]
+          if (man < 10): man = 10
+        if "flow" in value:
+          flow = value["flow"]
+          
+        angle = -175 + (man - 10) * 170 / 25
+        if (angle > -5): angle = -5
+        self.pressure.setRotation(angle)
+        
+        angle = 175 - flow * flow / 2
+        if (angle < 5): angle = 5
+        self.fuelflow.setRotation(angle)
+
+      
 class attitudeGauge(QGaugeView):
   
     def __init__(self):
@@ -217,14 +460,18 @@ class varioGauge(QGaugeView):
         self.needle.setTransformOriginPoint(QPoint(150,150))
         
         self.zeroAngle = -90
-        self.max = 2000
         self.setValue({"vvi":0})
         
     def setValue(self, value):
       
       if "vvi" in value:
         vvi = value["vvi"]
-        angle = int((vvi  / self.max) * 180)
+        if (vvi >= -500 and vvi <= 500):
+          angle = int((vvi / 500) * 35)
+        elif (vvi >= -1000 and vvi <= 1000):
+          angle = int(((vvi - 500) / 500) * 46) + 35
+        else:
+          angle = int(((vvi - 1000)  / 2000) * 98) + 81
         if (angle < -180): angle = -180
         elif (angle > 180): angle = 180
         self.needle.setRotation(self.zeroAngle + angle)
@@ -911,4 +1158,19 @@ class identPanel(QGaugeView):
 
         pixmap = QPixmap('/var/fspanel/images/ident-plate.png')
         self.panel = self.scene.addPixmap(pixmap)
+        
+        font = QFont('Verdana', 20, QFont.Light)
+        self.modele = self.scene.addSimpleText('', font)
+        self.modele.setPos(35,15)
+        self.modele.setBrush(Qt.white)
+       
+        font = QFont('Verdana', 26, QFont.Bold)
+        self.indicatif = self.scene.addSimpleText('', font)
+        self.indicatif.setPos(185,10)
+        self.indicatif.setBrush(Qt.white)
+        
+    def initialize(self, data):
+
+        self.modele.setText('{:>3}'.format(data['modele']))
+        self.indicatif.setText('{:>3}'.format(data['indicatif']))
         

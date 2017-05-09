@@ -5,13 +5,13 @@ import time
 import json, string, math, socket, select
 from struct import *
 from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
-#from fsEncoder import *
+from fsEncoder import *
 
 
 XPVER = "1.0"
 UDP_PORT = 49003
 UDP_SENDTO_PORT = 49000
-UDP_SENDTO_IP = "192.168.1.125"
+UDP_SENDTO_IP = "192.168.1.50"
 
 '''
 class fsWorker(QObject):
@@ -41,6 +41,7 @@ class fsSocket(QObject):
     turnslip = pyqtSignal([dict])	# turn, slip
     dg = pyqtSignal([dict])		# cap
     vario = pyqtSignal([dict])		# vvi
+    load = pyqtSignal([dict])		# load
     vor = pyqtSignal([dict])		# obs, tofr, hdef
     adf = pyqtSignal([dict])		# frq, card, brg
     engine = pyqtSignal([dict])		# rpm
@@ -49,6 +50,7 @@ class fsSocket(QObject):
     xpdr = pyqtSignal([dict])		# mode, sett
     oil = pyqtSignal([dict])		# temp, pres
     vacuum = pyqtSignal([dict])		# vac
+    flow = pyqtSignal([dict])		# man, flow
     fuel = pyqtSignal([dict])		# fuel
     switch = pyqtSignal([dict])		# batt, inter, mixt, pump, carb, gear, flap
     #battery = pyqtSignal([dict])	# batt
@@ -81,6 +83,7 @@ class fsSocket(QObject):
          "turnslip": { "signal": self.turnslip, "turn": { "code": 17, "index": 1, "data": 0 }, "slip": { "code": 18, "index": 7, "data": 0, "float": 0 } },
          "dg": { "signal": self.dg, "cap": { "code": 17, "index": 3, "data": 0 } },
          "vario": { "signal": self.vario, "vvi": { "code": 4, "index": 2, "data": 0 } },
+         "load": { "signal": self.load, "load": { "code": 4, "index": 4, "data": 0, "float": 0 } },
          "vor": { "signal": self.vor, "obs": { "code": 98, "index": 0, "data": 0 }, "tofr": { "code": 99, "index": 1, "data": 0 }, "hdef": { "code": 99, "index": 5, "data": 0, "float": 0 } },
          "adf": { "signal": self.adf, "frq": { "code": 101, "index": 0, "data": 0 }, "card": { "code": 101, "index": 1, "data": 0 }, "brg": { "code": 101, "index": 2, "data": 0 } },
          "engine": { "signal": self.engine, "rpm": { "code": 37, "index": 0, "data": 0 } },
@@ -89,6 +92,7 @@ class fsSocket(QObject):
          "xpdr": { "signal": self.xpdr, "mode": { "code": 104, "index": 0, "data": 0 }, "sett": { "code": 104, "index": 1, "data": 0 } },
          "oil": { "signal": self.oil, "temp": { "code": 50, "index": 0, "data": 0 }, "psi": { "code": 49, "index": 0, "data": 0 } },
          "vacuum": { "signal": self.vacuum, "vacuum": { "code": 7, "index": 2, "data": 0 } },
+         "flow": { "signal": self.flow, "man": { "code": 43, "index": 0, "data": 0, "float": 0 }, "flow": { "code": 45, "index": 0, "data": 0, "float": 0 } },
          "fuel": { "signal": self.fuel, "fuel": { "code": 63, "index": 2, "data": 0 } },
          "switch": { "signal": self.switch, "batt": { "code": 57, "index": 0, "data": 0 }, "inter": { "code": 58, "index": 0, "data": 0 }, "mixt": { "code": 29, "index": 0, "data": 0 }, "pump": { "code": 55, "index": 0, "data": 0 }, "carbu": { "code": 30, "index": 0, "data": 0 }, "gear": { "code": 14, "index": 0, "data": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 } },
          #"battery": { "signal": self.battery, "batt": { "code": 57, "index": 0, "data": 0 } },
@@ -101,7 +105,7 @@ class fsSocket(QObject):
          "light": { "signal": self.light, "nav": { "code": 106, "index": 1, "data": 0 }, "strobe": { "code": 106, "index": 3, "data": 0 }, "land": { "code": 106, "index": 4, "data": 0 }, "taxi": { "code": 106, "index": 5, "data": 0 } },
          "propeller": { "signal": self.propeller, "prop": { "code": 28, "index": 0, "data": 0 } },
          #"gear": { "signal": self.gear, "N": { "code": 67, "index": 0, "data": 0 }, "R": { "code": 67, "index": 1, "data": 0 }, "L": { "code": 67, "index": 2, "data": 0 } }
-      } 
+      }
 
       self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
       self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # Make Socket Reusable
@@ -110,7 +114,7 @@ class fsSocket(QObject):
       self.sock.bind(('', UDP_PORT))
 
       sel = bytes("DSEL0", "utf-8")
-      code = [3,4,7,13,14,17,18,20,28,29,30,37,49,50,55,57,58,63,96,97,98,99,101,104,106]
+      code = [3,4,7,13,14,17,18,20,28,29,30,37,43,45,49,50,55,57,58,63,96,97,98,99,101,104,106]
       data_selection_packet = pack('<5s', sel)
       for i in code:
         data_selection_packet += pack('<i', i)
@@ -123,7 +127,7 @@ class fsSocket(QObject):
         self.debug.emit('error sending init selection')
         #pass
 
-      #rotary = fsEncoder(self.send)
+      rotary = fsEncoder(self.send)
       self.params()
       
 

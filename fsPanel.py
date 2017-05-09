@@ -19,12 +19,14 @@ class Main(QWidget):
         self.light = lightPanel()
         self.radio = radioPanel()
         self.airspeed = airspeedGauge()
+        self.accelerometer = accelerometerGauge()
         self.attitude = attitudeGauge()
         self.altitude = altitudeGauge()
         self.turnslip = turnslipGauge()
         self.dg = dgGauge()
         self.vario = varioGauge()
         self.fuel = fuelGauge()
+        self.manifold = manifoldGauge()
         self.vacuum = vacuumGauge()
         self.oil = oilGauge()
         self.vor = vorGauge()
@@ -49,13 +51,13 @@ class Main(QWidget):
     def keyPressEvent(self, event):
         key = event.key()
         if (key == Qt.Key_1):
-          self.setFSLayout(0)
-        elif (key == Qt.Key_2):
           self.setFSLayout(1)
-        elif (key == Qt.Key_3):
+        elif (key == Qt.Key_2):
           self.setFSLayout(2)
-        elif (key == Qt.Key_D):
+        elif (key == Qt.Key_3):
           self.setFSLayout(3)
+        elif (key == Qt.Key_D):
+          self.setFSLayout(0)
         elif (key == Qt.Key_Space):
           self.setWindowState(self.windowState() ^ Qt.WindowFullScreen)
         elif (key == Qt.Key_Q):
@@ -73,6 +75,8 @@ class Main(QWidget):
       
     def setPanel(self, direction):
         index = (self.activeLayout + direction ) % NUM_LAYOUT
+        if (index == 0):
+          self.setPanel(direction)  
         self.setFSLayout(index)
 
     def setFSLayout(self, index):
@@ -102,12 +106,14 @@ class Main(QWidget):
         socket.nav.connect(self.radio.setNav)
         socket.xpdr.connect(self.radio.setXpdr)
         socket.airspeed.connect(self.airspeed.setValue)
+        socket.load.connect(self.accelerometer.setValue)
         socket.attitude.connect(self.attitude.setValue)
         socket.altitude.connect(self.altitude.setValue)
         socket.turnslip.connect(self.turnslip.setValue)
         socket.dg.connect(self.dg.setValue)
         socket.vario.connect(self.vario.setValue)
         socket.vacuum.connect(self.vacuum.setValue)
+        socket.flow.connect(self.manifold.setValue)
         socket.fuel.connect(self.fuel.setValue)
         socket.oil.connect(self.oil.setValue)
         socket.vor.connect(self.vor.setValue)
