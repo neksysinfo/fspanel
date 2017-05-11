@@ -204,8 +204,8 @@ class accelerometerGauge(QGaugeView):
     def setValue(self, value):
         if "load" in value:
           load = value["load"]
-        angle = load * 20
-        self.needle.setRotation(self.zeroAngle + angle)
+          angle = load * 20
+          self.needle.setRotation(self.zeroAngle + angle)
 
       
 class manifoldGauge(QGaugeView):
@@ -277,16 +277,15 @@ class manifoldGauge(QGaugeView):
         if "man" in value:
           man = value["man"]
           if (man < 10): man = 10
-        if "flow" in value:
-          flow = value["flow"]
-          
-        angle = -175 + (man - 10) * 170 / 25
-        if (angle > -5): angle = -5
-        self.pressure.setRotation(angle)
+          angle = -175 + (man - 10) * 170 / 25
+          if (angle > -5): angle = -5
+          self.pressure.setRotation(angle)
         
-        angle = 175 - flow * flow / 2
-        if (angle < 5): angle = 5
-        self.fuelflow.setRotation(angle)
+        if "flow" in value:
+          flow = value["flow"]          
+          angle = 175 - flow * flow / 2
+          if (angle < 5): angle = 5
+          self.fuelflow.setRotation(angle)
 
       
 class attitudeGauge(QGaugeView):
@@ -502,10 +501,13 @@ class vorGauge(QGaugeView):
         self.fr.setPos(175,175)
         self.fr.setVisible(False)
         
-        pixmap = QPixmap('/var/fspanel/images/vor-needle.png')
+        pixmap = QPixmap('/var/fspanel/images/vor-glide.png')
+        self.glide = self.scene.addPixmap(pixmap)
+        
+        pixmap = QPixmap('/var/fspanel/images/vor-slope.png')
         self.needle = self.scene.addPixmap(pixmap)
         
-        self.setValue({"obs":0, "tofr":1, "hdef":0})
+        self.setValue({"obs":0, "tofr":1, "hdef":0, "vdef":0})
         
     def setValue(self, value):
       
@@ -526,6 +528,11 @@ class vorGauge(QGaugeView):
         hdef = value["hdef"]
         dx = int(hdef * 30)
         self.needle.setTransform(QTransform().translate(dx, 0), False)
+
+      if "vdef" in value:
+        vdef = value["vdef"]
+        dy = int(vdef * 30)
+        self.glide.setTransform(QTransform().translate(0, dy), False)
 
 
 
@@ -551,7 +558,8 @@ class adfGauge(QGaugeView):
         #self.hdg = self.scene.addPixmap(pixmap)
         #self.hdg.setTransformOriginPoint(QPoint(150,150))
         
-        pixmap = QPixmap('/var/fspanel/images/adf-card.png')
+        #pixmap = QPixmap('/var/fspanel/images/adf-hdg.png')
+        pixmap = QPixmap('/var/fspanel/images/adf-brg.png')
         self.brg = self.scene.addPixmap(pixmap)
         self.brg.setTransformOriginPoint(QPoint(150,150))
         
@@ -569,7 +577,7 @@ class adfGauge(QGaugeView):
       
       if "card" in value:
         card = value["card"]
-        self.disc.setRotation(card)
+        self.disc.setRotation(-card)
 
       if "brg" in value:
         #pass

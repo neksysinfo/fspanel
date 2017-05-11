@@ -42,7 +42,7 @@ class fsSocket(QObject):
     dg = pyqtSignal([dict])		# cap
     vario = pyqtSignal([dict])		# vvi
     load = pyqtSignal([dict])		# load
-    vor = pyqtSignal([dict])		# obs, tofr, hdef
+    vor = pyqtSignal([dict])		# obs, tofr, hdef, vdef
     adf = pyqtSignal([dict])		# frq, card, brg
     engine = pyqtSignal([dict])		# rpm
     com = pyqtSignal([dict])		# active, stby
@@ -84,7 +84,7 @@ class fsSocket(QObject):
          "dg": { "signal": self.dg, "cap": { "code": 17, "index": 3, "data": 0 } },
          "vario": { "signal": self.vario, "vvi": { "code": 4, "index": 2, "data": 0 } },
          "load": { "signal": self.load, "load": { "code": 4, "index": 4, "data": 0, "float": 0 } },
-         "vor": { "signal": self.vor, "obs": { "code": 98, "index": 0, "data": 0 }, "tofr": { "code": 99, "index": 1, "data": 0 }, "hdef": { "code": 99, "index": 5, "data": 0, "float": 0 } },
+         "vor": { "signal": self.vor, "obs": { "code": 98, "index": 0, "data": 0 }, "tofr": { "code": 99, "index": 1, "data": 0 }, "hdef": { "code": 99, "index": 5, "data": 0, "float": 0 }, "vdef": { "code": 99, "index": 6, "data": 0, "float": 0 } },
          "adf": { "signal": self.adf, "frq": { "code": 101, "index": 0, "data": 0 }, "card": { "code": 101, "index": 1, "data": 0 }, "brg": { "code": 101, "index": 2, "data": 0 } },
          "engine": { "signal": self.engine, "rpm": { "code": 37, "index": 0, "data": 0 } },
          "com": { "signal": self.com, "active": { "code": 96, "index": 0, "data": 0 }, "stby": { "code": 96, "index": 1, "data": 0 } },
@@ -121,8 +121,8 @@ class fsSocket(QObject):
       #print (unpack('<5s{:d}i'.format(len(code)), data_selection_packet))
       
       try:
-        pass
-        #self.sock.sendto(data_selection_packet, (UDP_SENDTO_IP, UDP_SENDTO_PORT))
+        #pass
+        self.sock.sendto(data_selection_packet, (UDP_SENDTO_IP, UDP_SENDTO_PORT))
       except:
         self.debug.emit('error sending init selection')
         #pass
@@ -151,12 +151,12 @@ class fsSocket(QObject):
     
     
     def listen(self):
-         try:
+         #try:
             data, addr = self.sock.recvfrom(8192)
             if data:
                self.unpack(data)
-         except:
-            self.debug.emit('socket error')
+         #except:
+         #   self.debug.emit('socket error')
          
          
     def parse(self, key):
@@ -207,7 +207,7 @@ class fsSocket(QObject):
 
     def send(self, idx, ref, dat):
       
-      self.debug.emit("GPIO: %s %s %d" % (idx, ref, dat))
+      #self.debug.emit("GPIO: %s %s %d" % (idx, ref, dat))
       
       sel = bytes("CMND0", "utf-8")
       data_selection_packet = pack('<5s', sel)

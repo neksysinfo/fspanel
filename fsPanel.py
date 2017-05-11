@@ -3,7 +3,7 @@
 
 import os, sys, time
 
-from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot, QObjectCleanupHandler
+from PyQt5.QtCore import Qt, QThread, QObject, pyqtSignal, pyqtSlot, QObjectCleanupHandler
 from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout, QStackedLayout, QLayout, QTextEdit
 from PyQt5.QtGui import QPixmap, QPalette, QBrush
 
@@ -62,8 +62,24 @@ class Main(QWidget):
           self.setWindowState(self.windowState() ^ Qt.WindowFullScreen)
         elif (key == Qt.Key_Q):
           self.close()
-        elif (key == Qt.Key_V):
-          self.socket.send("nav", "button", 1)
+        elif (key == Qt.Key_7):
+          self.setPanel(-1)
+        elif (key == Qt.Key_9):
+          self.setPanel(1)
+        '''
+        elif (key == Qt.Key_U):
+          self.socket.send("adf", "outer", -1)
+        elif (key == Qt.Key_I):
+          self.socket.send("adf", "outer", 1)
+        elif (key == Qt.Key_O):
+          self.socket.send("adf", "inner", -1)
+        elif (key == Qt.Key_P):
+          self.socket.send("adf", "inner", 1)
+        elif (key == Qt.Key_L):
+          self.socket.send("adf", "coder", -1)
+        elif (key == Qt.Key_M):
+          self.socket.send("adf", "coder", 1)
+        '''
 
     def setBackground(self, pic):
         palette = QPalette()
@@ -74,10 +90,15 @@ class Main(QWidget):
     
       
     def setPanel(self, direction):
-        index = (self.activeLayout + direction ) % NUM_LAYOUT
+        index = (self.activeLayout + direction) % NUM_LAYOUT
         if (index == 0):
-          self.setPanel(direction)  
+          index = (index + direction) % NUM_LAYOUT
         self.setFSLayout(index)
+
+        #  self.activeLayout = index
+        #  self.setPanel(direction)
+        #else:
+        #  self.setFSLayout(index)
 
     def setFSLayout(self, index):
         self.activeLayout = index
