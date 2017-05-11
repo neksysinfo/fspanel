@@ -11,7 +11,7 @@ from fsEncoder import *
 XPVER = "1.0"
 UDP_PORT = 49003
 UDP_SENDTO_PORT = 49000
-UDP_SENDTO_IP = "192.168.1.50"
+UDP_SENDTO_IP = "192.168.1.10"
 
 '''
 class fsWorker(QObject):
