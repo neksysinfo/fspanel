@@ -1182,3 +1182,28 @@ class identPanel(QGaugeView):
         self.modele.setText('{:>3}'.format(data['modele']))
         self.indicatif.setText('{:>3}'.format(data['indicatif']))
         
+        
+class magnetoGauge(QGaugeView):
+  
+    def __init__(self):
+        QGaugeView.__init__(self)
+
+        self.scene.setSceneRect(0,0,300,300)
+        self.setTransform(QTransform().scale(0.4, 0.4), True)
+        
+        pixmap = QPixmap('/var/fspanel/images/magneto-plate.png')
+        self.gauge = self.scene.addPixmap(pixmap)
+
+        pixmap = QPixmap('/var/fspanel/images/magneto-key.png')
+        self.key = self.scene.addPixmap(pixmap)
+        self.key.setTransformOriginPoint(QPoint(150,150))
+        
+        self.setValue({"mag":0})
+        
+    def setValue(self, value):
+      
+      if "mag" in value:
+        mag = value["mag"]
+        angle = mag * 35
+        self.key.setRotation(angle)
+

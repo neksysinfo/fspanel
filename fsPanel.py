@@ -15,6 +15,7 @@ class Main(QWidget):
     def __init__(self):
         QWidget.__init__(self)
         
+        self.magneto = magnetoGauge()
         self.switch = switchPanel()
         self.light = lightPanel()
         self.radio = radioPanel()
@@ -141,6 +142,7 @@ class Main(QWidget):
         socket.adf.connect(self.adf.setValue)
         socket.engine.connect(self.engine.setValue)
         socket.trim.connect(self.trim.setValue)
+        socket.magneto.connect(self.magneto.setValue)
         
         socket.panel.connect(self.setPanel)
         socket.debug.connect(self.setDebug)

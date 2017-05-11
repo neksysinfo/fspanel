@@ -94,7 +94,7 @@ def populateLayout(parent, layout, index):
         hbox.setSpacing(0)
         hbox.addWidget(parent.switch, 0, 0, 1, 1, Qt.AlignTop | Qt.AlignRight)
         hbox.addWidget(parent.light, 0, 1, 1, 1, Qt.AlignTop | Qt.AlignLeft)
-        layout.addLayout(hbox, 4, 0, 1, 4, Qt.AlignTop | Qt.AlignLeft)
+        layout.addLayout(hbox, 4, 0, 1, 4, Qt.AlignBottom | Qt.AlignLeft)
       
     elif (index == 3):
 
@@ -127,6 +127,7 @@ def populateLayout(parent, layout, index):
         
         layout.addWidget(parent.oil, 2, 0, Qt.AlignCenter)
         #layout.addWidget(parent.trim, 2, 1, Qt.AlignTop | Qt.AlignRight)
+        layout.addWidget(parent.magneto, 2, 1, Qt.AlignCenter)
         layout.addWidget(parent.vor, 2, 2, Qt.AlignBottom)
         
         #layout.addWidget(parent.switch, 3, 0, 1, 4, Qt.AlignBottom | Qt.AlignLeft)
@@ -134,5 +135,5 @@ def populateLayout(parent, layout, index):
         hbox.setSpacing(0)
         hbox.addWidget(parent.switch, 0, 0, 1, 1, Qt.AlignTop | Qt.AlignRight)
         hbox.addWidget(parent.light, 0, 1, 1, 1, Qt.AlignTop | Qt.AlignLeft)
-        layout.addLayout(hbox, 3, 0, 1, 4, Qt.AlignTop | Qt.AlignLeft)
+        layout.addLayout(hbox, 3, 0, 1, 4, Qt.AlignBottom | Qt.AlignLeft)
 

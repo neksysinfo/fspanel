@@ -63,6 +63,7 @@ class fsSocket(QObject):
     light = pyqtSignal([dict])		# nav, strobe, nav, taxi
     propeller = pyqtSignal([dict])	# prop
     #gear = pyqtSignal([dict])		# N, R, L
+    magneto = pyqtSignal([dict])	# magneto
 
     panel = pyqtSignal([int])
     debug = pyqtSignal([str])
@@ -104,7 +105,8 @@ class fsSocket(QObject):
          "trim": { "signal": self.trim, "pitch": { "code": 13, "index": 0, "data": 0, "float": 0 }, "yaw": { "code": 13, "index": 2, "data": 0, "float": 0 } },
          "light": { "signal": self.light, "nav": { "code": 106, "index": 1, "data": 0 }, "strobe": { "code": 106, "index": 3, "data": 0 }, "land": { "code": 106, "index": 4, "data": 0 }, "taxi": { "code": 106, "index": 5, "data": 0 } },
          "propeller": { "signal": self.propeller, "prop": { "code": 28, "index": 0, "data": 0 } },
-         #"gear": { "signal": self.gear, "N": { "code": 67, "index": 0, "data": 0 }, "R": { "code": 67, "index": 1, "data": 0 }, "L": { "code": 67, "index": 2, "data": 0 } }
+         #"gear": { "signal": self.gear, "N": { "code": 67, "index": 0, "data": 0 }, "R": { "code": 67, "index": 1, "data": 0 }, "L": { "code": 67, "index": 2, "data": 0 } },
+         "magneto": { "signal": self.magneto, "mag": { "code": 32, "index": 0, "data": 0 } }
       }
 
       self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
@@ -114,7 +116,7 @@ class fsSocket(QObject):
       self.sock.bind(('', UDP_PORT))
 
       sel = bytes("DSEL0", "utf-8")
-      code = [3,4,7,13,14,17,18,20,28,29,30,37,43,45,49,50,55,57,58,63,96,97,98,99,101,104,106]
+      code = [3,4,7,13,14,17,18,20,28,29,30,32,37,43,45,49,50,55,57,58,63,96,97,98,99,101,104,106]
       data_selection_packet = pack('<5s', sel)
       for i in code:
         data_selection_packet += pack('<i', i)
@@ -128,7 +130,7 @@ class fsSocket(QObject):
         #pass
 
       rotary = fsEncoder(self.send)
-      self.params()
+      #self.params()
       
 
     @pyqtSlot()
