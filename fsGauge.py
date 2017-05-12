@@ -838,8 +838,16 @@ class switchPanel(QGaugeView):
     def setSwitch(self, data):
       
       if "fps" in data:
-        value = str(data["fps"])
-        self.fps.setText(value)
+        fps = data["fps"]
+        self.fps.setText(str(fps))
+        if (fps < 10):
+          self.fps.setBrush(Qt.red)
+        elif (fps < 20):
+          self.fps.setBrush(Qt.yellow)
+        elif (fps < 30):
+          self.fps.setBrush(Qt.gray)
+        else:
+          self.fps.setBrush(Qt.green)
 
       if "batt" in data:
         value = data["batt"]
