@@ -66,7 +66,7 @@ class fsSocket(QObject):
     magneto = pyqtSignal([dict])	# magneto
 
     panel = pyqtSignal([int])
-    debug = pyqtSignal([str])
+    debug = pyqtSignal([str,str])
     
     finished = pyqtSignal()
     
@@ -77,6 +77,7 @@ class fsSocket(QObject):
       super().__init__()
       
       self.gauge = { 
+         #"fps": { "signal": self.fps, "fps": { "code": 0, "index": 0, "data": 0, "float": 0 } },
          "airspeed": { "signal": self.airspeed, "speed": { "code": 3, "index": 0, "data": 0 } },
          "attitude": { "signal": self.attitude, "pitch": { "code": 17, "index": 0, "data": 0 }, "roll": { "code": 17, "index": 1, "data": 0 } },
          # lat 0 / lon 1 / alt QNH 2 / alt QFE 3 / alt ind 5 / 
@@ -95,7 +96,7 @@ class fsSocket(QObject):
          "vacuum": { "signal": self.vacuum, "vacuum": { "code": 7, "index": 2, "data": 0 } },
          "flow": { "signal": self.flow, "man": { "code": 43, "index": 0, "data": 0, "float": 0 }, "flow": { "code": 45, "index": 0, "data": 0, "float": 0 } },
          "fuel": { "signal": self.fuel, "fuel": { "code": 63, "index": 2, "data": 0 } },
-         "switch": { "signal": self.switch, "batt": { "code": 57, "index": 0, "data": 0 }, "inter": { "code": 58, "index": 0, "data": 0 }, "mixt": { "code": 29, "index": 0, "data": 0 }, "pump": { "code": 55, "index": 0, "data": 0 }, "carbu": { "code": 30, "index": 0, "data": 0 }, "gear": { "code": 14, "index": 0, "data": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 } },
+         "switch": { "signal": self.switch, "batt": { "code": 57, "index": 0, "data": 0 }, "inter": { "code": 58, "index": 0, "data": 0 }, "mixt": { "code": 29, "index": 0, "data": 0 }, "pump": { "code": 55, "index": 0, "data": 0 }, "carbu": { "code": 30, "index": 0, "data": 0 }, "gear": { "code": 14, "index": 0, "data": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 }, "fps": { "code": 0, "index": 0, "data": 0, "float": 0 } },
          #"battery": { "signal": self.battery, "batt": { "code": 57, "index": 0, "data": 0 } },
          #"altern": { "signal": self.altern, "inter": { "code": 58, "index": 0, "data": 0 } },
          #"mixture": { "signal": self.mixture, "mixt": { "code": 29, "index": 0, "data": 0 } },
@@ -116,7 +117,7 @@ class fsSocket(QObject):
       self.sock.bind(('', UDP_PORT))
 
       sel = bytes("DSEL0", "utf-8")
-      code = [3,4,7,13,14,17,18,20,28,29,30,32,37,43,45,49,50,55,57,58,63,96,97,98,99,101,104,106]
+      code = [0,3,4,7,13,14,17,18,20,28,29,30,32,37,43,45,49,50,55,57,58,63,96,97,98,99,101,104,106]
       data_selection_packet = pack('<5s', sel)
       for i in code:
         data_selection_packet += pack('<i', i)
@@ -126,18 +127,18 @@ class fsSocket(QObject):
         #pass
         self.sock.sendto(data_selection_packet, (UDP_SENDTO_IP, UDP_SENDTO_PORT))
       except:
-        self.debug.emit('error sending init selection')
+        self.debug.emit('initialization code select', 'exception')
         #pass
 
       rotary = fsEncoder(self.send)
-      #self.params()
+      self.params()
       
 
     @pyqtSlot()
     def run(self):
        self.running = True
        print ('fsSocket running')
-       self.debug.emit('fsSocket running')
+       self.debug.emit('fsSocket running', 'info')
        
        while self.running:
          self.listen()
@@ -157,8 +158,8 @@ class fsSocket(QObject):
             data, addr = self.sock.recvfrom(8192)
             if data:
                self.unpack(data)
-         #except:
-         #   self.debug.emit('socket error')
+         #except Exception as exc:
+         #   self.debug.emit('socket (%s)' % exc, 'exception')
          
          
     def parse(self, key):
@@ -168,14 +169,15 @@ class fsSocket(QObject):
       for value in values:
         if (value == "signal"): continue
         item = values[value]
-        if ("float" in item):
-          data = int(self.dataref[item["code"]][item["index"]] * 100) / 100
-        else:
-          data = int(self.dataref[item["code"]][item["index"]])
-        if (data != item["data"]):
-          changed = True
-          self.gauge[key][value]["data"] = data
-          liste[value] = data
+        if (item["code"] in self.dataref):
+          if ("float" in item):
+            data = int(self.dataref[item["code"]][item["index"]] * 100) / 100
+          else:
+            data = int(self.dataref[item["code"]][item["index"]])
+          if (data != item["data"]):
+            changed = True
+            self.gauge[key][value]["data"] = data
+            liste[value] = data
           
       if (changed):
         #print (key)

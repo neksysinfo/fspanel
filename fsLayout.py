@@ -17,7 +17,6 @@ def populateLayout(parent, layout, index):
         layout.setVerticalSpacing(30)
         
         layout.addWidget(parent.debug, 0, 0)
-        parent.debug.setStyleSheet("background: rgba(0,0,0,90%); color: rgba(0,255,0,90%)")
         
     elif (index == 1):
 

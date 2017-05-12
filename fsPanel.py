@@ -11,7 +11,28 @@ from fsSocket import *
 from fsGauge import *
 from fsLayout import *
 
+
+class debugTextEdit(QTextEdit):
+  
+    def __init__(self):
+        QTextEdit.__init__(self)
+        
+        self.setStyleSheet("background-color: rgba(0,0,0,90%); color: rgba(0,255,0,90%)")
+        
+    def appendText(self, text, status=''):
+      
+      if (status == 'info'):
+        self.insertHtml('<font color=yellow>%s</font><br>' % text)
+      elif (status == 'error'):
+        self.insertHtml("<font color='red'>%s:</font> <font color='white'>%s</font><br>" % ('error', text))
+      elif (status == 'except'):
+        self.insertHtml("<font color='red'>%s:</font> <font color='white'>%s</font><br>" % ('except', text))
+      else:
+        self.insertHtml('<font color=lime>%s</font><br>' % text)
+
+
 class Main(QWidget):
+  
     def __init__(self):
         QWidget.__init__(self)
         
@@ -36,9 +57,10 @@ class Main(QWidget):
         self.trim = trimGauge()
         self.ident = identPanel()
         
-        self.debug = QTextEdit()
-        self.setDebug('debug initiated')
+        self.debug = debugTextEdit()
         self.debug.keyPressEvent = self.keyPressEvent
+        self.debug.appendText('debug initiated', 'info')
+        self.debug.appendText('error test', 'error')
         
         self.stack = QStackedLayout(self)
         for i in range(NUM_LAYOUT):
@@ -48,7 +70,6 @@ class Main(QWidget):
           self.stack.addWidget(page)
         self.setFSLayout(DEFAULT_LAYOUT)
         
-
     def keyPressEvent(self, event):
         key = event.key()
         if (key == Qt.Key_1):
@@ -89,30 +110,18 @@ class Main(QWidget):
         palette.setBrush(QPalette.Background, brush)
         self.setPalette(palette)
     
-      
     def setPanel(self, direction):
         index = (self.activeLayout + direction) % NUM_LAYOUT
         if (index == 0):
           index = (index + direction) % NUM_LAYOUT
         self.setFSLayout(index)
 
-        #  self.activeLayout = index
-        #  self.setPanel(direction)
-        #else:
-        #  self.setFSLayout(index)
-
     def setFSLayout(self, index):
         self.activeLayout = index
         layout = self.stack.widget(index).layout()
         populateLayout(self, layout, index)
         self.stack.setCurrentIndex(index)
-          
-
-    def setDebug(self, text):
-      self.debug.append(text)
-      #self.debug.insertPlainText(text)
-      #self.debug.insertHtml('<font color=red>test</font><br>')
-      
+    
     def setUDPSocket(self, socket):
         self.socket = socket
         #socket.battery.connect(self.switch.setSwitch)
@@ -145,7 +154,7 @@ class Main(QWidget):
         socket.magneto.connect(self.magneto.setValue)
         
         socket.panel.connect(self.setPanel)
-        socket.debug.connect(self.setDebug)
+        socket.debug.connect(self.debug.appendText)
 
 
 def main():

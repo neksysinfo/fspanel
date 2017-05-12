@@ -794,6 +794,9 @@ class switchPanel(QGaugeView):
         self.altern.setPos(160,30)
         
         # 250
+        self.fps = self.scene.addSimpleText('', font)
+        self.fps.setPos(270,50)
+        self.fps.setBrush(Qt.gray)
         
         label = self.scene.addSimpleText('Mixture', font)
         label.setPos(380,8)
@@ -834,6 +837,10 @@ class switchPanel(QGaugeView):
    
     def setSwitch(self, data):
       
+      if "fps" in data:
+        value = str(data["fps"])
+        self.fps.setText(value)
+
       if "batt" in data:
         value = data["batt"]
         if (value == 1): self.battery.setPixmap(self.greenLed)
