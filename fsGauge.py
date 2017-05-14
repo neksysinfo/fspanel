@@ -98,7 +98,7 @@ class airspeedGauge(QGaugeView):
         
         font = QFont('Arial', 14, QFont.Light)
         self.speed = self.scene.addSimpleText('0', font)
-        self.speed.setPos(135,185)
+        self.speed.setPos(135,230)
         self.speed.setBrush(Qt.yellow)
         
         self.setValue({"speed":0})
@@ -440,6 +440,7 @@ class dgGauge(QGaugeView):
       
       if "cap" in value:
         cap = value["cap"]
+        
         self.disc.setRotation(-cap)
 
 
@@ -465,14 +466,21 @@ class varioGauge(QGaugeView):
       
       if "vvi" in value:
         vvi = value["vvi"]
+        
         if (vvi >= -500 and vvi <= 500):
           angle = int((vvi / 500) * 35)
-        elif (vvi >= -1000 and vvi <= 1000):
+        elif (vvi >= -1000 and vvi < 0):
+          angle = int(((vvi + 500) / 500) * 46) - 35
+        elif (vvi > 0 and vvi <= 1000):
           angle = int(((vvi - 500) / 500) * 46) + 35
+        elif (vvi < 0):
+          angle = int(((vvi + 1000)  / 2000) * 98) - 81
         else:
           angle = int(((vvi - 1000)  / 2000) * 98) + 81
+          
         if (angle < -180): angle = -180
         elif (angle > 180): angle = 180
+        
         self.needle.setRotation(self.zeroAngle + angle)
 
 
@@ -501,13 +509,18 @@ class vorGauge(QGaugeView):
         self.fr.setPos(175,175)
         self.fr.setVisible(False)
         
+        font = QFont('Arial', 12, QFont.Light)
+        self.dme = self.scene.addSimpleText('0', font)
+        self.dme.setPos(90,175)
+        self.dme.setBrush(Qt.yellow)
+        
         pixmap = QPixmap('/var/fspanel/images/vor-glide.png')
         self.glide = self.scene.addPixmap(pixmap)
         
         pixmap = QPixmap('/var/fspanel/images/vor-slope.png')
         self.needle = self.scene.addPixmap(pixmap)
         
-        self.setValue({"obs":0, "tofr":1, "hdef":0, "vdef":0})
+        self.setValue({"obs":0, "tofr":1, "dme": 0, "hdef":0, "vdef":0})
         
     def setValue(self, value):
       
@@ -523,7 +536,11 @@ class vorGauge(QGaugeView):
         else:
           self.fr.setVisible(True)
           self.to.setVisible(False)
-	
+
+      if "dme" in value:
+        dme = value["dme"]
+        self.dme.setText('{:>3}'.format(dme))
+
       if "hdef" in value:
         hdef = value["hdef"]
         dx = int(hdef * 30)
@@ -602,12 +619,17 @@ class engineGauge(QGaugeView):
         pixmap = QPixmap('/var/fspanel/images/enginerpm.png')
         self.gauge = self.scene.addPixmap(pixmap)
 
+        font = QFont('Arial', 14, QFont.Light)
+        self.speed = self.scene.addSimpleText('0', font)
+        self.speed.setPos(130,230)
+        self.speed.setBrush(Qt.yellow)
+        
         pixmap = QPixmap('/var/fspanel/images/enginerpm-dial.png')
         self.needle = self.scene.addPixmap(pixmap)
         self.needle.setTransformOriginPoint(QPoint(150,150))
         
         self.zeroAngle = -123
-        self.setValue({"rpm":0})
+        self.setValue({"rpm":500})
         
     def setValue(self, value):
       if "rpm" in value:
@@ -623,6 +645,7 @@ class engineGauge(QGaugeView):
         else:
            angle = 250
         self.needle.setRotation(self.zeroAngle + angle)
+        self.speed.setText('{:>3}'.format(rpm))
 
 
 class vacuumGauge(QGaugeView):

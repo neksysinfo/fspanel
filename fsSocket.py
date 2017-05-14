@@ -42,7 +42,7 @@ class fsSocket(QObject):
     dg = pyqtSignal([dict])		# cap
     vario = pyqtSignal([dict])		# vvi
     load = pyqtSignal([dict])		# load
-    vor = pyqtSignal([dict])		# obs, tofr, hdef, vdef
+    vor = pyqtSignal([dict])		# obs, tofr, dme, hdef, vdef
     adf = pyqtSignal([dict])		# frq, card, brg
     engine = pyqtSignal([dict])		# rpm
     com = pyqtSignal([dict])		# active, stby
@@ -86,7 +86,7 @@ class fsSocket(QObject):
          "dg": { "signal": self.dg, "cap": { "code": 17, "index": 3, "data": 0 } },
          "vario": { "signal": self.vario, "vvi": { "code": 4, "index": 2, "data": 0 } },
          "load": { "signal": self.load, "load": { "code": 4, "index": 4, "data": 0, "float": 0 } },
-         "vor": { "signal": self.vor, "obs": { "code": 98, "index": 0, "data": 0 }, "tofr": { "code": 99, "index": 1, "data": 0 }, "hdef": { "code": 99, "index": 5, "data": 0, "float": 0 }, "vdef": { "code": 99, "index": 6, "data": 0, "float": 0 } },
+         "vor": { "signal": self.vor, "obs": { "code": 98, "index": 0, "data": 0 }, "tofr": { "code": 99, "index": 1, "data": 0 }, "dme": { "code": 99, "index": 4, "data": 0, "float": 0 }, "hdef": { "code": 99, "index": 5, "data": 0, "float": 0 }, "vdef": { "code": 99, "index": 6, "data": 0, "float": 0 } },
          "adf": { "signal": self.adf, "frq": { "code": 101, "index": 0, "data": 0 }, "card": { "code": 101, "index": 1, "data": 0 }, "brg": { "code": 101, "index": 2, "data": 0 } },
          "engine": { "signal": self.engine, "rpm": { "code": 37, "index": 0, "data": 0 } },
          "com": { "signal": self.com, "active": { "code": 96, "index": 0, "data": 0 }, "stby": { "code": 96, "index": 1, "data": 0 } },
