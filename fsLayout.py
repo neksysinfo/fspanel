@@ -16,7 +16,7 @@ def populateLayout(parent, layout, index):
         layout.setHorizontalSpacing(20)
         layout.setVerticalSpacing(30)
         
-        layout.addWidget(parent.debug, 0, 0)
+        layout.addWidget(parent.debug.log, 0, 0)
         
     elif (index == 1):
 

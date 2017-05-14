@@ -10,25 +10,7 @@ from PyQt5.QtGui import QPixmap, QPalette, QBrush
 from fsSocket import *
 from fsGauge import *
 from fsLayout import *
-
-
-class debugTextEdit(QTextEdit):
-  
-    def __init__(self):
-        QTextEdit.__init__(self)
-        
-        self.setStyleSheet("background-color: rgba(0,0,0,90%); color: rgba(0,255,0,90%)")
-        
-    def appendText(self, text, status=''):
-      
-      if (status == 'info'):
-        self.insertHtml('<font color=yellow>%s</font><br>' % text)
-      elif (status == 'error'):
-        self.insertHtml("<font color='red'>%s:</font> <font color='white'>%s</font><br>" % ('error', text))
-      elif (status == 'except'):
-        self.insertHtml("<font color='red'>%s:</font> <font color='white'>%s</font><br>" % ('except', text))
-      else:
-        self.insertHtml('<font color=lime>%s</font><br>' % text)
+from fsDebug import *
 
 
 class Main(QWidget):
@@ -57,8 +39,8 @@ class Main(QWidget):
         self.trim = trimGauge()
         self.ident = identPanel()
         
-        self.debug = debugTextEdit()
-        self.debug.keyPressEvent = self.keyPressEvent
+        self.debug = fsDebug()
+        self.debug.log.keyPressEvent = self.keyPressEvent
         self.debug.appendText('debug initiated', 'info')
         self.debug.appendText('error test', 'error')
         
