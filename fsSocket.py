@@ -53,17 +53,11 @@ class fsSocket(QObject):
     flow = pyqtSignal([dict])		# man, flow
     fuel = pyqtSignal([dict])		# fuel
     switch = pyqtSignal([dict])		# batt, inter, mixt, pump, carb, gear, flap
-    #battery = pyqtSignal([dict])	# batt
-    #altern = pyqtSignal([dict])	# inter
-    #mixture = pyqtSignal([dict])	# mixt
-    #pump = pyqtSignal([dict])		# pump
-    #carbu = pyqtSignal([dict])		# carb
-    #flaps = pyqtSignal([dict])		# flap
     trim = pyqtSignal([dict])		# trim
     light = pyqtSignal([dict])		# nav, strobe, nav, taxi
-    propeller = pyqtSignal([dict])	# prop
-    #gear = pyqtSignal([dict])		# N, R, L
     magneto = pyqtSignal([dict])	# magneto
+    #gear = pyqtSignal([dict])		# N, R, L
+    #propeller = pyqtSignal([dict])	# prop
 
     panel = pyqtSignal([int])
     debug = pyqtSignal([str,str])
@@ -77,7 +71,6 @@ class fsSocket(QObject):
       super().__init__()
       
       self.gauge = { 
-         #"fps": { "signal": self.fps, "fps": { "code": 0, "index": 0, "data": 0, "float": 0 } },
          "airspeed": { "signal": self.airspeed, "speed": { "code": 3, "index": 0, "data": 0 } },
          "attitude": { "signal": self.attitude, "pitch": { "code": 17, "index": 0, "data": 0 }, "roll": { "code": 17, "index": 1, "data": 0 } },
          # lat 0 / lon 1 / alt QNH 2 / alt QFE 3 / alt ind 5 / 
@@ -97,17 +90,11 @@ class fsSocket(QObject):
          "flow": { "signal": self.flow, "man": { "code": 43, "index": 0, "data": 0, "float": 0 }, "flow": { "code": 45, "index": 0, "data": 0, "float": 0 } },
          "fuel": { "signal": self.fuel, "fuel": { "code": 63, "index": 2, "data": 0 } },
          "switch": { "signal": self.switch, "batt": { "code": 57, "index": 0, "data": 0 }, "inter": { "code": 58, "index": 0, "data": 0 }, "mixt": { "code": 29, "index": 0, "data": 0 }, "pump": { "code": 55, "index": 0, "data": 0 }, "carbu": { "code": 30, "index": 0, "data": 0 }, "gear": { "code": 14, "index": 0, "data": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 }, "fps": { "code": 0, "index": 0, "data": 0, "float": 0 } },
-         #"battery": { "signal": self.battery, "batt": { "code": 57, "index": 0, "data": 0 } },
-         #"altern": { "signal": self.altern, "inter": { "code": 58, "index": 0, "data": 0 } },
-         #"mixture": { "signal": self.mixture, "mixt": { "code": 29, "index": 0, "data": 0 } },
-         #"pump": { "signal": self.pump, "pump": { "code": 55, "index": 0, "data": 0 } },
-         #"carbu": { "signal": self.carbu, "carbu": { "code": 30, "index": 0, "data": 0 } },
-         #"flaps": { "signal": self.flaps, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 } },
          "trim": { "signal": self.trim, "pitch": { "code": 13, "index": 0, "data": 0, "float": 0 }, "yaw": { "code": 13, "index": 2, "data": 0, "float": 0 } },
-         "light": { "signal": self.light, "nav": { "code": 106, "index": 1, "data": 0 }, "strobe": { "code": 106, "index": 3, "data": 0 }, "land": { "code": 106, "index": 4, "data": 0 }, "taxi": { "code": 106, "index": 5, "data": 0 } },
-         "propeller": { "signal": self.propeller, "prop": { "code": 28, "index": 0, "data": 0 } },
+         "light": { "signal": self.light, "nav": { "code": 106, "index": 1, "data": 0 }, "strobe": { "code": 106, "index": 3, "data": 0 }, "land": { "code": 106, "index": 4, "data": 0 }, "taxi": { "code": 106, "index": 5, "data": 0 }, "speedbrake": { "code": 13, "index": 7, "data": 0 } },
+         "magneto": { "signal": self.magneto, "mag": { "code": 32, "index": 0, "data": 0 } },
          #"gear": { "signal": self.gear, "N": { "code": 67, "index": 0, "data": 0 }, "R": { "code": 67, "index": 1, "data": 0 }, "L": { "code": 67, "index": 2, "data": 0 } },
-         "magneto": { "signal": self.magneto, "mag": { "code": 32, "index": 0, "data": 0 } }
+         #"propeller": { "signal": self.propeller, "prop": { "code": 28, "index": 0, "data": 0 } }
       }
 
       self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
@@ -117,7 +104,7 @@ class fsSocket(QObject):
       self.sock.bind(('', UDP_PORT))
 
       sel = bytes("DSEL0", "utf-8")
-      code = [0,3,4,7,13,14,17,18,20,28,29,30,32,37,43,45,49,50,55,57,58,63,96,97,98,99,101,104,106]
+      code = [0,3,4,7,13,14,17,18,20,29,30,32,37,43,45,49,50,55,57,58,63,96,97,98,99,101,104,106]
       data_selection_packet = pack('<5s', sel)
       for i in code:
         data_selection_packet += pack('<i', i)

@@ -8,88 +8,124 @@ from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsTextItem
 from PyQt5.QtGui import QImage, QPixmap, QTransform, QFont, QBrush, QPen, QPainter, QPainterPath
 
 class QGaugeView(QGraphicsView):
-  
+
     def __init__(self):
         QGraphicsView.__init__(self)
 
         self.scene = QGraphicsScene()
-        
+
         self.setScene(self.scene)
         self.setStyleSheet("border: 0px; background: transparent;")
+
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
         
+        for key in data:
+
+          value = data[key]['value']
+
+          self.param[key] = {}
+          self.param[key]['value'] = value
+
+          self.setValue({key:value})
+
+    def getValue(self, key):
+      
+      if key in self.param:
+        return self.param[key]['value']
+
+    def setValue(self, data):
+
+      for key in data:
+
+        if key in self.param:
+
+          value = data[key]
+          self.param[key]['value'] = value
+
+
 class airspeedGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
-
+    def initialize(self, data):
+      
+        self.param = {}   
+        self.scene.clear()
+        
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), True)
+        self.setTransform(QTransform().scale(0.85, 0.85), False)
 
         self.setRenderHint(QPainter.Antialiasing, True)
         
+        pixmap = QPixmap('/var/fspanel/images/speed-plate.png')
+        self.scene.addPixmap(pixmap)
+        
         self.zeroAngle = -180
         
-    def initialize(self, data):
-      
-        self.vso = data['vs0']
-        self.vne = data['vne']
-        self.max = data['max']
+        key = 'speed'
         
-        delta = 300 / (self.max - 50)
+        value = data[key]['value']
+        self.param[key] = {}
+        self.param[key]['value'] = value
+
+        vs0 = data[key]['vs0']
+        vs1 = data[key]['vs1']
+        vfe = data[key]['vfe']
+        vno = data[key]['vno']
+        vne = data[key]['vne']
+        self.maxspeed = data[key]['max']
         
-        self.scene.clear()
-        
-        pixmap = QPixmap('/var/fspanel/images/speed-plate.png')
-        self.gauge = self.scene.addPixmap(pixmap)
+        delta = 300 / (self.maxspeed - 50)
         
         path = QPainterPath()
         pen = QPen(Qt.white, 12, Qt.SolidLine)
-        a1 = 270 - ((data['vfe']-50) * delta + 30)
-        a2 = (data['vfe'] - data['vs0']) * delta
+        a1 = 270 - ((vfe - 50) * delta + 30)
+        a2 = (vfe - vs0) * delta
         path.arcMoveTo(40, 40, 220, 220, a1)
         path.arcTo(40, 40, 220, 220, a1, a2)      
         self.scene.addPath(path, pen)
         
         path = QPainterPath()
         pen = QPen(Qt.green, 10, Qt.SolidLine)
-        a1 = 270 - ((data['vno']-50) * delta + 30)
-        a2 = (data['vno'] - data['vs1']) * delta
+        a1 = 270 - ((vno - 50) * delta + 30)
+        a2 = (vno - vs1) * delta
         path.arcMoveTo(50, 50, 200, 200, a1)
         path.arcTo(50, 50, 200, 200, a1, a2)
         self.scene.addPath(path, pen)
       
         path = QPainterPath()
         pen = QPen(Qt.yellow, 10, Qt.SolidLine)
-        a1 = 270 - ((data['vne']-50)*delta + 30)
-        a2 = (data['vne'] - data['vno']) * delta
+        a1 = 270 - ((vne - 50) * delta + 30)
+        a2 = (vne - vno) * delta
         path.arcMoveTo(50, 50, 200, 200, a1)
         path.arcTo(50, 50, 200, 200, a1, a2)
         self.scene.addPath(path, pen)
         
-        for a in range(50, data['max']+1, 10):
+        for a in range(50, self.maxspeed + 1, 10):
 
             alpha = self.zeroAngle + 30 + (a - 50) * delta
-            dx = math.cos(math.radians(alpha-90))
-            dy = math.sin(math.radians(alpha-90))
+            dx = math.cos(math.radians(alpha - 90))
+            dy = math.sin(math.radians(alpha - 90))
 
             if (a % 50 == 0):
               R = 75
               font = QFont('Verdana', 12, QFont.Light)
               text = self.scene.addSimpleText(str(a), font)
-              text.setPos(135+50*dx,140+50*dy)
+              text.setPos(135 + 50 * dx, 140 + 50 * dy)
               text.setBrush(Qt.white)
             else:
               R = 90
               
-            if (a == self.vne):
+            if (a == vne):
               R = 75
               pen = QPen(Qt.red, 3, Qt.SolidLine)
             else:
               pen = QPen(Qt.white, 3, Qt.SolidLine)
 
             path = QPainterPath()
-            path.moveTo(150+110*dx, 150+110*dy)
-            path.lineTo(150+R*dx, 150+R*dy)
+            path.moveTo(150 + 110 * dx, 150 + 110 * dy)
+            path.lineTo(150 + R * dx, 150 + R * dy)
             self.scene.addPath(path, pen)
             
         pixmap = QPixmap('/var/fspanel/images/speed-dial.png')
@@ -101,31 +137,47 @@ class airspeedGauge(QGaugeView):
         self.speed.setPos(135,230)
         self.speed.setBrush(Qt.yellow)
         
-        self.setValue({"speed":0})
+        self.setValue({key:value})
 
-    def setValue(self, value):
-      if "speed" in value:
-        speed = int(value["speed"] * 1.852)
-        delta = 300 / (self.max - 50)
+    def setValue(self, data):
+      
+      if "speed" in data:
+	
+        value = data["speed"]
+        speed = int(value * 1.852)
+        delta = 300 / (self.maxspeed - 50)
         if (speed < 50): angle = 0
-        elif (speed <= self.max): angle = 30 + (speed - 50) * delta
+        elif (speed <= self.maxspeed): angle = 30 + (speed - 50) * delta
         else: angle = 300
+        
         self.needle.setRotation(self.zeroAngle + angle)
         self.speed.setText('{:>3}'.format(speed))
+
+        self.param['speed']['value'] = speed
 
 
 class accelerometerGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
 
+        self.param = {}   
+        self.scene.clear()
+        
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), True)
+        self.setTransform(QTransform().scale(0.85, 0.85), False)
 
         self.setRenderHint(QPainter.Antialiasing, True)
         
+        self.zeroAngle = -90
+
+        key = 'load'
+        
+        value = data[key]['value']
+        self.param[key] = {}
+        self.param[key]['value'] = value
+
         pixmap = QPixmap('/var/fspanel/images/g-unit-plate.png')
-        self.gauge = self.scene.addPixmap(pixmap)
+        self.scene.addPixmap(pixmap)
         
         path = QPainterPath()
         pen = QPen(Qt.red, 15, Qt.SolidLine)
@@ -172,22 +224,22 @@ class accelerometerGauge(QGaugeView):
         for a in range(25):
 
           alpha = 30 - (a * 10)
-          dx = math.cos(math.radians(alpha-90))
-          dy = math.sin(math.radians(alpha-90))
+          dx = math.cos(math.radians(alpha - 90))
+          dy = math.sin(math.radians(alpha - 90))
             
           if (a % 2 == 0):
             R = 75
-            X = R * math.cos(math.radians(alpha-90))
-            Y = R * math.sin(math.radians(alpha-90))
+            X = R * math.cos(math.radians(alpha - 90))
+            Y = R * math.sin(math.radians(alpha - 90))
             font = QFont('Verdana', 12, QFont.Light)
             text = self.scene.addSimpleText(str(abs(g)), font)
-            text.setPos(145+R*dx,142+R*dy)
+            text.setPos(145 + R * dx, 142 + R * dy)
             text.setBrush(Qt.gray)
             g = g - 1
             	    
           path = QPainterPath()
-          path.moveTo(150+110*dx, 150+110*dy)
-          path.lineTo(150+90*dx, 150+90*dy)
+          path.moveTo(150 + 110 * dx, 150 + 110 * dy)
+          path.lineTo(150 + 90 * dx, 150 + 90 * dy)
           if (a % 2 == 0):
             pen = QPen(Qt.gray, 3, Qt.SolidLine)
           else:
@@ -198,23 +250,29 @@ class accelerometerGauge(QGaugeView):
         self.needle = self.scene.addPixmap(pixmap)
         self.needle.setTransformOriginPoint(QPoint(150,150))
         
-        self.zeroAngle = -90
-        self.setValue({"load":0})
+        self.setValue({key:value})
         
-    def setValue(self, value):
-        if "load" in value:
-          load = value["load"]
+    def setValue(self, data):
+      
+        if "load" in data:
+	  
+          load = data["load"]
           angle = load * 20
+          
           self.needle.setRotation(self.zeroAngle + angle)
+          
+          self.param['load']['value'] = load
 
       
 class manifoldGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
 
+        self.param = {}   
+        self.scene.clear()
+        
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), True)
+        self.setTransform(QTransform().scale(0.85, 0.85), False)
 
         self.setRenderHint(QPainter.Antialiasing, True)
         
@@ -224,8 +282,8 @@ class manifoldGauge(QGaugeView):
         for a in range(10, 36, 1):
 
             alpha = -175 + (a - 10) * 170 / 25
-            dx = math.cos(math.radians(alpha-90))
-            dy = math.sin(math.radians(alpha-90))
+            dx = math.cos(math.radians(alpha - 90))
+            dy = math.sin(math.radians(alpha - 90))
 
             if (a % 5 == 0):
               R = 90
@@ -239,15 +297,15 @@ class manifoldGauge(QGaugeView):
             pen = QPen(Qt.white, 3, Qt.SolidLine)
 
             path = QPainterPath()
-            path.moveTo(150+110*dx, 150+110*dy)
-            path.lineTo(150+R*dx, 150+R*dy)
+            path.moveTo(150 + 110 * dx, 150 + 110 * dy)
+            path.lineTo(150 + R * dx, 150 + R * dy)
             self.scene.addPath(path, pen)
             
         for a in range(3, 19, 1):
 
             alpha = 175 - a * a / 2
-            dx = math.cos(math.radians(alpha-90))
-            dy = math.sin(math.radians(alpha-90))
+            dx = math.cos(math.radians(alpha - 90))
+            dy = math.sin(math.radians(alpha - 90))
 
             if (a % 2 == 0):
               R = 95
@@ -261,8 +319,8 @@ class manifoldGauge(QGaugeView):
             pen = QPen(Qt.white, 3, Qt.SolidLine)
 
             path = QPainterPath()
-            path.moveTo(150+110*dx, 150+110*dy)
-            path.lineTo(150+R*dx, 150+R*dy)
+            path.moveTo(150 + 110 * dx, 150 + 110 * dy)
+            path.lineTo(150 + R * dx, 150 + R * dy)
             self.scene.addPath(path, pen)
             
         pixmap = QPixmap('/var/fspanel/images/speed-dial.png')
@@ -271,30 +329,42 @@ class manifoldGauge(QGaugeView):
         self.fuelflow = self.scene.addPixmap(pixmap)
         self.fuelflow.setTransformOriginPoint(QPoint(150,150))
       
-        self.setValue({"man":0, "flow":0})
+        for key in data:
+
+          value = data[key]['value']
+
+          self.param[key] = {}
+          self.param[key]['value'] = value
+
+          self.setValue({key:value})
         
-    def setValue(self, value):
-        if "man" in value:
-          man = value["man"]
+    def setValue(self, data):
+      
+        if "man" in data:
+          man = data["man"]
           if (man < 10): man = 10
           angle = -175 + (man - 10) * 170 / 25
           if (angle > -5): angle = -5
           self.pressure.setRotation(angle)
+          self.param['man']['value'] = man
         
-        if "flow" in value:
-          flow = value["flow"]          
+        if "flow" in data:
+          flow = data["flow"]          
           angle = 175 - flow * flow / 2
           if (angle < 5): angle = 5
           self.fuelflow.setRotation(angle)
+          self.param['flow']['value'] = flow
 
       
 class attitudeGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
 
+        self.param = {}   
+        self.scene.clear()
+        
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), True)
+        self.setTransform(QTransform().scale(0.85, 0.85), False)
 
         pixmap = QPixmap('/var/fspanel/images/attitude-backplate.png')
         self.back = self.scene.addPixmap(pixmap)
@@ -315,27 +385,36 @@ class attitudeGauge(QGaugeView):
         self.plane.setTransformOriginPoint(QPoint(150,150))        
         
         self.zeroAngle = 0
-        self.setValue({"roll":0, "pitch":0})
         
-    def setValue(self, value):
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
+        
+    def setValue(self, data):
       
-      if "pitch" in value:
-        pitch = value["pitch"]
+      if "pitch" in data:
+        pitch = data["pitch"]
         self.disc.setTransform(QTransform().translate(0, pitch * 1.5), False)
+        self.param['pitch']['value'] = pitch
 
-      if "roll" in value:
-        roll = value["roll"]
+      if "roll" in data:
+        roll = data["roll"]
         self.gear.setRotation(-roll)
         self.disc.setRotation(-roll)
+        self.param['roll']['value'] = roll
 
 
 class altitudeGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), True)
+        self.setTransform(QTransform().scale(0.85, 0.85), False)
 
         pixmap = QPixmap('/var/fspanel/images/altitude.png')
         self.gauge = self.scene.addPixmap(pixmap)
@@ -361,31 +440,40 @@ class altitudeGauge(QGaugeView):
         self.baro.setBrush(Qt.white)
         
         self.zeroAngle = 0
-        self.setValue({"alt":0, "baro":0})
         
-    def setValue(self, value):
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
+        
+    def setValue(self, data):
       
-      if "alt" in value:
-        altitude = value["alt"]
+      if "alt" in data:
+        altitude = data["alt"]
         self.needle100.setRotation((360 / 1000) * altitude)
         self.needle1000.setRotation((360 / 10000) * altitude)
         self.needle10000.setRotation((360 / 100000) * altitude)
         if (altitude > 10000): hatch = False
         else: hatch = True
         self.hatch.setVisible(hatch)
+        self.param['alt']['value'] = altitude
 
-      if "baro" in value:
-        baro = int(value["baro"] * 33.863886)
+      if "baro" in data:
+        baro = int(data["baro"] * 33.863886)
         #self.baro.setText('%5s' % baro)
         self.baro.setText('{:>4}'.format(baro))
+        self.param['baro']['value'] = baro
 
 class turnslipGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), True)
+        self.setTransform(QTransform().scale(0.85, 0.85), False)
         
         pixmap = QPixmap('/var/fspanel/images/turnslip-disc.png')
         self.disc = self.scene.addPixmap(pixmap)
@@ -403,29 +491,38 @@ class turnslipGauge(QGaugeView):
         self.plane.setTransformOriginPoint(QPoint(150,150))
 
         self.zeroAngle = 0
-        self.setValue({"slip":0, "turn":0})
         
-    def setValue(self, value):
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
+        
+    def setValue(self, data):
       
-      if "slip" in value:
-        slip = value["slip"]
+      if "slip" in data:
+        slip = data["slip"]
         dx = int(slip * 12)
         self.ball.setTransform(QTransform().translate(-dx, 0), False)
+        self.param['slip']['value'] = slip
 
-      if "turn" in value:
-        turn = value["turn"]
+      if "turn" in data:
+        turn = data["turn"]
         if (turn <= -35): turn = -35
         elif (turn >= 35): turn = 35
         self.plane.setRotation(turn)
+        self.param['turn']['value'] = turn
 
 
 class dgGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), True)
+        self.setTransform(QTransform().scale(0.85, 0.85), False)
 
         pixmap = QPixmap('/var/fspanel/images/dg-disc.png')
         self.disc = self.scene.addPixmap(pixmap)
@@ -434,23 +531,30 @@ class dgGauge(QGaugeView):
         pixmap = QPixmap('/var/fspanel/images/dg-gear.png')
         self.gear = self.scene.addPixmap(pixmap)
         
-        self.setValue({"cap":0})
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
         
-    def setValue(self, value):
+    def setValue(self, data):
       
-      if "cap" in value:
-        cap = value["cap"]
+      if "cap" in data:
+        cap = data["cap"]
         
         self.disc.setRotation(-cap)
+        self.param['cap']['value'] = cap
 
 
 class varioGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), True)
+        self.setTransform(QTransform().scale(0.85, 0.85), False)
 
         pixmap = QPixmap('/var/fspanel/images/verticalspeed.png')
         self.gauge = self.scene.addPixmap(pixmap)
@@ -460,12 +564,17 @@ class varioGauge(QGaugeView):
         self.needle.setTransformOriginPoint(QPoint(150,150))
         
         self.zeroAngle = -90
-        self.setValue({"vvi":0})
         
-    def setValue(self, value):
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
+        
+    def setValue(self, data):
       
-      if "vvi" in value:
-        vvi = value["vvi"]
+      if "vvi" in data:
+        vvi = data["vvi"]
         
         if (vvi >= -500 and vvi <= 500):
           angle = int((vvi / 500) * 35)
@@ -482,15 +591,18 @@ class varioGauge(QGaugeView):
         elif (angle > 180): angle = 180
         
         self.needle.setRotation(self.zeroAngle + angle)
+        self.param['vvi']['value'] = vvi
 
 
 class vorGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), True)
+        self.setTransform(QTransform().scale(0.85, 0.85), False)
 
         pixmap = QPixmap('/var/fspanel/images/vor-disc.png')
         self.disc = self.scene.addPixmap(pixmap)
@@ -520,7 +632,12 @@ class vorGauge(QGaugeView):
         pixmap = QPixmap('/var/fspanel/images/vor-slope.png')
         self.needle = self.scene.addPixmap(pixmap)
         
-        self.setValue({"obs":0, "tofr":1, "dme": 0, "hdef":0, "vdef":0})
+        #self.setValue({"obs":0, "tofr":1, "dme": 0, "hdef":0, "vdef":0})
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
         
     def setValue(self, value):
       
@@ -555,11 +672,13 @@ class vorGauge(QGaugeView):
 
 class adfGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), True)
+        self.setTransform(QTransform().scale(0.85, 0.85), False)
 
         pixmap = QPixmap('/var/fspanel/images/adf-disc.png')
         self.disc = self.scene.addPixmap(pixmap)
@@ -588,7 +707,12 @@ class adfGauge(QGaugeView):
         self.freq.setPos(135,195)
         self.freq.setBrush(Qt.white)
         
-        self.setValue({"frq":0, "card":0, "brg":0})
+        #self.setValue({"frq":0, "card":0, "brg":0}) 
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
         
     def setValue(self, value):
       
@@ -610,14 +734,16 @@ class adfGauge(QGaugeView):
 
 class engineGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
 
+        self.param = {}   
+        self.scene.clear()
+        
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), True)
+        self.setTransform(QTransform().scale(0.85, 0.85), False)
 
         pixmap = QPixmap('/var/fspanel/images/enginerpm.png')
-        self.gauge = self.scene.addPixmap(pixmap)
+        self.scene.addPixmap(pixmap)
 
         font = QFont('Arial', 14, QFont.Light)
         self.speed = self.scene.addSimpleText('0', font)
@@ -629,11 +755,18 @@ class engineGauge(QGaugeView):
         self.needle.setTransformOriginPoint(QPoint(150,150))
         
         self.zeroAngle = -123
-        self.setValue({"rpm":500})
-        
-    def setValue(self, value):
-      if "rpm" in value:
-        rpm = value["rpm"]
+
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
+          
+    def setValue(self, data):
+      
+      if "rpm" in data:
+
+        rpm = data["rpm"]
         if (rpm <= 0):
            angle = 0
         elif (rpm <= 1000):
@@ -644,17 +777,21 @@ class engineGauge(QGaugeView):
            angle = 180 + (rpm - 2500) * 0.07
         else:
            angle = 250
+           
         self.needle.setRotation(self.zeroAngle + angle)
         self.speed.setText('{:>3}'.format(rpm))
+        self.param['rpm']['value'] = rpm
 
 
 class vacuumGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,200,200)
-        self.setTransform(QTransform().scale(0.9, 0.9), True)
+        self.setTransform(QTransform().scale(0.9, 0.9), False)
  
         pixmap = QPixmap('/var/fspanel/images/vacuum-back.png')
         self.gauge = self.scene.addPixmap(pixmap)
@@ -664,26 +801,34 @@ class vacuumGauge(QGaugeView):
         self.needle.setTransformOriginPoint(QPoint(100,100))
         
         self.zeroAngle = -90
-        self.setValue({"vacuum":0})
         
-    def setValue(self, value):
-      if "vacuum" in value:
-        vacuum = int(value["vacuum"] * 5)
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
+        
+    def setValue(self, data):
+      if "vacuum" in data:
+        vacuum = int(data["vacuum"] * 5)
         angle = vacuum * 18
         if (angle <= 0):
            angle = 0
         elif (angle >= 180):
            angle = 180
         self.needle.setRotation(self.zeroAngle + angle)
+        self.param['vacuum']['value'] = vacuum
 
 
 class fuelGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,200,200)
-        self.setTransform(QTransform().scale(0.9, 0.9), True)
+        self.setTransform(QTransform().scale(0.9, 0.9), False)
         
         pixmap = QPixmap('/var/fspanel/images/fuel-gear.png')
         self.gauge = self.scene.addPixmap(pixmap)
@@ -697,27 +842,35 @@ class fuelGauge(QGaugeView):
 
         self.zeroAngle = -60
         self.max = 115
-        self.setValue({"fuel":0})
         
-    def setValue(self, value):
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
+        
+    def setValue(self, data):
       
-      if "fuel" in value:
-        fuel = int((value["fuel"] * 0.4536) / 0.721)
+      if "fuel" in data:
+        fuel = int((data["fuel"] * 0.4536) / 0.721)
         angle = int((fuel  / self.max) * 120)
         if (angle <= 0):
            angle = 0
         elif (angle >= 100):
            angle = 100
         self.needle.setRotation(self.zeroAngle + angle)
+        self.param['fuel']['value'] = fuel
 
 
 class oilGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,200,200)
-        #self.setTransform(QTransform().scale(0.9, 0.9), True)
+        #self.setTransform(QTransform().scale(0.9, 0.9), False)
         
         pixmap = QPixmap('/var/fspanel/images/oil-disc.png')
         self.gauge = self.scene.addPixmap(pixmap)
@@ -732,34 +885,42 @@ class oilGauge(QGaugeView):
         
         pixmap = QPixmap('/var/fspanel/images/oil-glass.png')
         self.glass = self.scene.addPixmap(pixmap)
+              
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
         
-        self.setValue({"temp":0, "psi":0})
-        
-    def setValue(self, value):
+    def setValue(self, data):
       
-      if "temp" in value:
-        temp = value["temp"]
+      if "temp" in data:
+        temp = data["temp"]
         angle = int((temp / 130) * 100)
         if (temp <= 0):
            angle = 0
         elif (temp >= 100):
            angle = 100
         self.temp.setRotation(50 - angle)
+        self.param['temp']['value'] = temp
         
-      if "psi" in value:
-        psi = value["psi"]
+      if "psi" in data:
+        psi = data["psi"]
         angle = int((psi / 115) * 100)
         if (psi <= 0):
            angle = 0
         elif (psi >= 100):
            angle = 100
         self.psi.setRotation(angle - 50)
+        self.param['psi']['value'] = psi
 
 
 class trimGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,150,275)
         
@@ -769,18 +930,23 @@ class trimGauge(QGaugeView):
         pixmap = QPixmap('/var/fspanel/images/trim-handle.png')
         self.handle = self.scene.addPixmap(pixmap)
         
-        self.setValue({"pitch":0})
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
         
-    def setValue(self, value):
+    def setValue(self, data):
       
-      if "pitch" in value:
-        pitch = value["pitch"]
+      if "pitch" in data:
+        pitch = data["pitch"]
         dy = int(pitch * 100)
         if (dy < -100): dy = -100
         elif (dy > 100): dy = 100
         self.handle.setTransform(QTransform().translate(0, dy), False)
+        self.param['pitch']['value'] = pitch
 
-      if "yaw" in value:
+      if "yaw" in data:
         pass
 
 
@@ -789,208 +955,170 @@ class switchPanel(QGaugeView):
     def __init__(self):
         QGaugeView.__init__(self)
 
-        self.scene.setSceneRect(0,0,800,75)
+        self.led = {}
+        self.led['gray'] = QPixmap('/var/fspanel/images/led-gray.png')
+        self.led['white'] = QPixmap('/var/fspanel/images/led-white.png')
+        self.led['green'] = QPixmap('/var/fspanel/images/led-green.png')
+        self.led['yellow'] = QPixmap('/var/fspanel/images/led-yellow.png')
+        self.led['red'] = QPixmap('/var/fspanel/images/led-red.png')
         
-        pixmap = QPixmap('/var/fspanel/images/switch-plate-1.png')
-        self.gauge = self.scene.addPixmap(pixmap)
+    def initialize(self, data):
+      
+      self.param = {}   
+      self.scene.clear()
         
-        font = QFont('Arial', 10, QFont.Light)
+      self.scene.setSceneRect(0,0,800,75)
         
-        self.grayLed = QPixmap('/var/fspanel/images/led-gray.png')
-        self.whiteLed = QPixmap('/var/fspanel/images/led-white.png')
-        self.greenLed = QPixmap('/var/fspanel/images/led-green.png')
-        self.yellowLed = QPixmap('/var/fspanel/images/led-yellow.png')
-        self.redLed = QPixmap('/var/fspanel/images/led-red.png')
+      pixmap = QPixmap('/var/fspanel/images/switch-plate-1.png')
+      self.gauge = self.scene.addPixmap(pixmap)
         
-        # 25
+      font = QFont('Arial', 10, QFont.Light)
+      bold = QFont('Arial', 15, QFont.Bold)
+      
+      for key in data:
+  
+        pos = data[key]['pos']
         
-        label = self.scene.addSimpleText('Batterie', font)
-        label.setPos(45,8)
+        self.param[key] = {}
+        
+        if (key == 'fps'):
+          self.param[key]['text'] = self.scene.addSimpleText('', font)
+          self.param[key]['text'].setPos(55+110*pos,50)
+          self.param[key]['value'] = data[key]['value']
+          continue
+
+        self.param[key]['label'] = data[key]['label']
+        self.param[key]['led'] = data[key]['led']
+        self.param[key]['value'] = data[key]['value']
+
+        label = self.scene.addSimpleText(self.param[key]['label'], font)
+        x = 72 + 110 * pos - int(label.boundingRect().width() / 2)
+        label.setPos(x,8)
         label.setBrush(Qt.white)
-        self.battery = self.scene.addPixmap(self.grayLed)
-        self.battery.setPos(50,30)
+          
+        self.param[key]['item'] = self.scene.addPixmap(self.led['gray'])
+        self.param[key]['item'].setPos(55+110*pos,30)
         
-        label = self.scene.addSimpleText('Altern', font)
-        label.setPos(160,8)
-        label.setBrush(Qt.white)
-        self.altern = self.scene.addPixmap(self.grayLed)
-        self.altern.setPos(160,30)
-        
-        # 250
-        self.fps = self.scene.addSimpleText('', font)
-        self.fps.setPos(270,50)
-        self.fps.setBrush(Qt.gray)
-        
-        label = self.scene.addSimpleText('Mixture', font)
-        label.setPos(380,8)
-        label.setBrush(Qt.white)
-        self.mixture = self.scene.addPixmap(self.grayLed)
-        self.mixture.setPos(380,30)
-        
-        label = self.scene.addSimpleText('Carbu', font)
-        label.setPos(490,8)
-        label.setBrush(Qt.white)
-        self.carbu = self.scene.addPixmap(self.grayLed)
-        self.carbu.setPos(490,30)
-        
-        label = self.scene.addSimpleText('Pompe', font)
-        label.setPos(600,8)
-        label.setBrush(Qt.white)
-        self.pump = self.scene.addPixmap(self.grayLed)
-        self.pump.setPos(600,30)
-        
-        # 550
-        
-        label = self.scene.addSimpleText('Volets', font)
-        label.setPos(710,8)
-        label.setBrush(Qt.white)
-        self.flap = self.scene.addPixmap(self.grayLed)
-        self.flap.setPos(710,30)
-        bold = QFont('Arial', 15, QFont.Bold)
-        self.flaps = self.scene.addSimpleText(' ', bold)
-        self.flaps.setPos(722,37)
-        self.flaps.setBrush(Qt.black)
-                
-        self.setSwitch({"batt":0})
-        self.setSwitch({"inter":0})
-        self.setSwitch({"mixt":0})
-        self.setSwitch({"carbu":0})
-        self.setSwitch({"pump":0})
-        self.setSwitch({"flap":0})
-   
+        if ('text' in data[key]):
+          self.param[key]['text'] = self.scene.addSimpleText(data[key]['text'], bold)
+          self.param[key]['text'].setPos(67+110*pos,37)
+          self.param[key]['text'].setBrush(Qt.black)
+
+        self.setSwitch({key: data[key]['value']})
+
     def setSwitch(self, data):
       
-      if "fps" in data:
-        fps = data["fps"]
-        self.fps.setText(str(fps))
-        if (fps < 10):
-          self.fps.setBrush(Qt.red)
-        elif (fps < 20):
-          self.fps.setBrush(Qt.yellow)
-        elif (fps < 30):
-          self.fps.setBrush(Qt.gray)
-        else:
-          self.fps.setBrush(Qt.green)
+      for key in data:
+        
+        if key in self.param:
 
-      if "batt" in data:
-        value = data["batt"]
-        if (value == 1): self.battery.setPixmap(self.greenLed)
-        else: self.battery.setPixmap(self.grayLed)
+          value = data[key]
+          self.param[key]['value'] = value
+          
+          if ('item' in self.param[key]):
+            item = self.param[key]['item']
+            led = self.param[key]['led']
+            
+          if (key == 'fps'):
 
-      if "inter" in data:
-        value = data["inter"]
-        if (value == 1): self.altern.setPixmap(self.greenLed)
-        else: self.altern.setPixmap(self.grayLed)
+            self.param[key]['text'].setText(str(value))
+            if (value < 10):
+              self.param[key]['text'].setBrush(Qt.red)
+            elif (value < 20):
+              self.param[key]['text'].setBrush(Qt.yellow)
+            elif (value < 30):
+              self.param[key]['text'].setBrush(Qt.gray)
+            else:
+              self.param[key]['text'].setBrush(Qt.green)
+              
+          elif (key == 'flap'):
 
-      if "mixt" in data:
-        value = data["mixt"]
-        if (value == 1): self.mixture.setPixmap(self.redLed)
-        else: self.mixture.setPixmap(self.grayLed)
+            if (value != self.param[key]['value']):
+              delta = self.param[key]['value'] - value
+              number = round(1 / abs(delta))
+              if (value == 0):
+                item.setPixmap(self.led['gray'])
+                self.param[key]['text'].setText(' ')        
+              elif (value == 1):
+                item.setPixmap(self.led['red'])
+                self.param[key]['text'].setText(str(number))
+              else:
+                item.setPixmap(self.led['yellow'])
+                self.param[key]['text'].setText(str(round(number*value)))
+              
+          else:
 
-      if "carbu" in data:
-        value = data["carbu"]
-        if (value == 1): self.carbu.setPixmap(self.redLed)
-        else: self.carbu.setPixmap(self.grayLed)
+            if (value == 1): item.setPixmap(self.led[led])
+            else: item.setPixmap(self.led['gray'])
 
-      if "pump" in data:
-        value = data["pump"]
-        if (value == 1): self.pump.setPixmap(self.greenLed)
-        else: self.pump.setPixmap(self.grayLed)
-
-      if "gear" in data:
-        pass
-
-      if "flap" in data:
-        value = int(data["flap"] * 2)
-        #print (value)
-        if (value == 1):
-          self.flap.setPixmap(self.yellowLed)
-          self.flaps.setText('1')
-        elif (value == 2):
-          self.flap.setPixmap(self.redLed)
-          self.flaps.setText('2')
-        else:
-          self.flap.setPixmap(self.grayLed)
-          self.flaps.setText(' ')        
-
-
+      
 class lightPanel(QGaugeView):
   
     def __init__(self):
         QGaugeView.__init__(self)
+        
+        self.led = {}
+        self.led['gray'] = QPixmap('/var/fspanel/images/led-gray.png')
+        self.led['white'] = QPixmap('/var/fspanel/images/led-white.png')
+        self.led['green'] = QPixmap('/var/fspanel/images/led-green.png')
+        self.led['yellow'] = QPixmap('/var/fspanel/images/led-yellow.png')
+        self.led['red'] = QPixmap('/var/fspanel/images/led-red.png')
+        
+    def initialize(self, data):
+      
+      self.param = {}   
+      self.scene.clear()
+        
+      self.scene.setSceneRect(0,0,450,75)
 
-        self.scene.setSceneRect(0,0,450,75)
+      pixmap = QPixmap('/var/fspanel/images/switch-plate-2.png')
+      self.gauge = self.scene.addPixmap(pixmap)
         
-        pixmap = QPixmap('/var/fspanel/images/switch-plate-2.png')
-        self.gauge = self.scene.addPixmap(pixmap)
+      font = QFont('Arial', 10, QFont.Light)
         
-        font = QFont('Arial', 10, QFont.Light)
-        
-        self.grayLed = QPixmap('/var/fspanel/images/led-gray.png')
-        self.whiteLed = QPixmap('/var/fspanel/images/led-white.png')
-        self.greenLed = QPixmap('/var/fspanel/images/led-green.png')
-        self.yellowLed = QPixmap('/var/fspanel/images/led-yellow.png')
-        self.redLed = QPixmap('/var/fspanel/images/led-red.png')
-        
-        label = self.scene.addSimpleText('Nav', font)
-        label.setPos(45,8)
+      for key in data:
+  
+        pos = data[key]['pos']
+          
+        self.param[key] = {}
+        self.param[key]['label'] = data[key]['label']
+        self.param[key]['led'] = data[key]['led']
+        self.param[key]['value'] = data[key]['value']
+
+        label = self.scene.addSimpleText(self.param[key]['label'], font)
+        x = 57 + 110 * pos - int(label.boundingRect().width() / 2)
+        label.setPos(x,8)
         label.setBrush(Qt.white)
-        self.nav = self.scene.addPixmap(self.grayLed)
-        self.nav.setPos(40,30)
+          
+        self.param[key]['item'] = self.scene.addPixmap(self.led['gray'])
+        self.param[key]['item'].setPos(40+110*pos,30)
         
-        label = self.scene.addSimpleText('Strobe', font)
-        label.setPos(150,8)
-        label.setBrush(Qt.white)
-        self.strobe = self.scene.addPixmap(self.grayLed)
-        self.strobe.setPos(150,30)
-        
-        label = self.scene.addSimpleText('Landing', font)
-        label.setPos(255,8)
-        label.setBrush(Qt.white)
-        self.land = self.scene.addPixmap(self.grayLed)
-        self.land.setPos(260,30)
-        
-        label = self.scene.addSimpleText('Taxi', font)
-        label.setPos(375,8)
-        label.setBrush(Qt.white)
-        self.taxi = self.scene.addPixmap(self.grayLed)
-        self.taxi.setPos(370,30)
-        
-        self.setLight({"nav":0})
-        self.setLight({"strobe":0})
-        self.setLight({"land":0})
-        self.setLight({"taxi":0})
-   
+        self.setLight({key: data[key]['value']})
+
     def setLight(self, data):
       
-      if "nav" in data:
-        value = data["nav"]
-        if (value == 1): self.nav.setPixmap(self.whiteLed)
-        else: self.nav.setPixmap(self.grayLed)
+      for key in data:
         
-      if "strobe" in data:
-        value = data["strobe"]
-        if (value == 1): self.strobe.setPixmap(self.whiteLed)
-        else: self.strobe.setPixmap(self.grayLed)
+        if key in self.param:
+	  
+          item = self.param[key]['item']
+          led = self.param[key]['led']
+          value = data[key]
+          self.param[key]['value'] = value
         
-      if "land" in data:
-        value = data["land"]
-        if (value == 1): self.land.setPixmap(self.whiteLed)
-        else: self.land.setPixmap(self.grayLed)
+          if (value == 1): item.setPixmap(self.led[led])
+          else: item.setPixmap(self.led['gray'])
 
-      if "taxi" in data:
-        value = data["taxi"]
-        if (value == 1): self.taxi.setPixmap(self.whiteLed)
-        else: self.taxi.setPixmap(self.grayLed)
-        
 
 class radioPanel(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,505,425)
-        self.setTransform(QTransform().scale(0.75, 0.75), True)
+        self.setTransform(QTransform().scale(0.75, 0.75), False)
 
         pixmap = QPixmap('/var/fspanel/images/radio-back.png')
         self.panel = self.scene.addPixmap(pixmap)
@@ -1191,16 +1319,18 @@ class radioPanel(QGaugeView):
 
       if "mode" in value:
         mode = value["mode"]
-        self.button.setRotation(mode *45)
+        self.button.setRotation(mode * 45)
 
 
 class identPanel(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0, 0, 375, 75)
-        #self.setTransform(QTransform().scale(0.75, 0.75), True)
+        #self.setTransform(QTransform().scale(0.75, 0.75), False)
 
         pixmap = QPixmap('/var/fspanel/images/ident-plate.png')
         self.panel = self.scene.addPixmap(pixmap)
@@ -1215,19 +1345,19 @@ class identPanel(QGaugeView):
         self.indicatif.setPos(185,10)
         self.indicatif.setBrush(Qt.white)
         
-    def initialize(self, data):
-
-        self.modele.setText('{:>3}'.format(data['modele']))
-        self.indicatif.setText('{:>3}'.format(data['indicatif']))
+        self.modele.setText('{:>3}'.format(data['ident']['modele']))
+        self.indicatif.setText('{:>3}'.format(data['ident']['indicatif']))
         
         
 class magnetoGauge(QGaugeView):
   
-    def __init__(self):
-        QGaugeView.__init__(self)
+    def initialize(self, data):
+
+        self.param = {}   
+        self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.4, 0.4), True)
+        self.setTransform(QTransform().scale(0.4, 0.4), False)
         
         pixmap = QPixmap('/var/fspanel/images/magneto-plate.png')
         self.gauge = self.scene.addPixmap(pixmap)
@@ -1236,12 +1366,17 @@ class magnetoGauge(QGaugeView):
         self.key = self.scene.addPixmap(pixmap)
         self.key.setTransformOriginPoint(QPoint(150,150))
         
-        self.setValue({"mag":0})
+        for key in data:
+          value = data[key]['value']
+          self.param[key] = {}
+          self.param[key]['value'] = value
+          self.setValue({key:value})
         
-    def setValue(self, value):
+    def setValue(self, data):
       
-      if "mag" in value:
-        mag = value["mag"]
+      if "mag" in data:
+        mag = data["mag"]
         angle = mag * 35
         self.key.setRotation(angle)
+        self.param['mag']['value'] = mag
 

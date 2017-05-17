@@ -19,28 +19,64 @@ class Main(QWidget):
         QWidget.__init__(self)
         
         self.magneto = magnetoGauge()
+        self.magneto.initialize({'mag': {'value':0}})
+        
         self.switch = switchPanel()
+        
         self.light = lightPanel()
+        
         self.radio = radioPanel()
+        self.radio.initialize({})
+        
         self.airspeed = airspeedGauge()
+        
         self.accelerometer = accelerometerGauge()
+        self.accelerometer.initialize({'load': {'value':0}})
+        
         self.attitude = attitudeGauge()
+        self.attitude.initialize({'pitch': {'value':0}, 'roll': {'value':0}})
+        
         self.altitude = altitudeGauge()
+        self.altitude.initialize({'alt': {'value':0}, 'baro': {'value':0}})
+        
         self.turnslip = turnslipGauge()
+        self.turnslip.initialize({'turn': {'value':0}, 'slip': {'value':0}})
+        
         self.dg = dgGauge()
+        self.dg.initialize({'cap': {'value':0}})
+        
         self.vario = varioGauge()
+        self.vario.initialize({'vvi': {'value':0}})
+        
         self.fuel = fuelGauge()
+        self.fuel.initialize({'fuel': {'value':0}})
+        
         self.manifold = manifoldGauge()
+        self.manifold.initialize({'man': {'value':0}, 'flow': {'value':0}})
+        
         self.vacuum = vacuumGauge()
+        self.vacuum.initialize({'vacuum': {'value':0}})
+        
         self.oil = oilGauge()
+        self.oil.initialize({'temp': {'value':0}, 'psi': {'value':0}})
+        
         self.vor = vorGauge()
+        self.vor.initialize({'obs': {'value':0}, 'tofr': {'value':1}, 'dme': {'value':0}, 'hdef': {'value':0}, 'vdef': {'value':0}})
+        
         self.adf = adfGauge()
+        self.adf.initialize({'frq': {'value':0}, 'card': {'value':0}, 'brg': {'value':0}})
+        
         self.engine = engineGauge()
+        self.engine.initialize({'rpm': {'value':0}})
+        
         self.trim = trimGauge()
+        self.trim.initialize({'pitch': {'value':0}})
+        
         self.ident = identPanel()
         
-        self.debug = fsDebug()
-        self.debug.log.keyPressEvent = self.keyPressEvent
+        self.debug = fsDebug(self)
+        #self.debug.log.keyPressEvent = self.keyPressEvent
+        self.debug.keyPressEvent = self.keyPressEvent
         self.debug.appendText('debug initiated', 'info')
         self.debug.appendText('error test', 'error')
         
@@ -105,14 +141,9 @@ class Main(QWidget):
         self.stack.setCurrentIndex(index)
     
     def setUDPSocket(self, socket):
+      
         self.socket = socket
-        #socket.battery.connect(self.switch.setSwitch)
-        #socket.altern.connect(self.switch.setSwitch)
-        #socket.mixture.connect(self.switch.setSwitch)
-        #socket.pump.connect(self.switch.setSwitch)
-        #socket.carbu.connect(self.switch.setSwitch)
-        #socket.gear.connect(self.switch.setSwitch)
-        #socket.flaps.connect(self.switch.setSwitch)
+        
         socket.switch.connect(self.switch.setSwitch)
         socket.light.connect(self.light.setLight)
         socket.com.connect(self.radio.setCom)
