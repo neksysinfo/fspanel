@@ -1013,7 +1013,6 @@ class switchPanel(QGaugeView):
         if key in self.param:
 
           value = data[key]
-          self.param[key]['value'] = value
           
           if ('item' in self.param[key]):
             item = self.param[key]['item']
@@ -1050,6 +1049,8 @@ class switchPanel(QGaugeView):
 
             if (value == 1): item.setPixmap(self.led[led])
             else: item.setPixmap(self.led['gray'])
+
+          self.param[key]['value'] = value
 
       
 class lightPanel(QGaugeView):
