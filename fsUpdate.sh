@@ -14,3 +14,5 @@ ln -s /var/fspanel.2 /var/fspanel
 rm /var/fspanel
 ln -s /var/fspanel.1 /var/fspanel
 
+chmod +x /var/fspanel/fsPanel.py
+
