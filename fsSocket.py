@@ -53,11 +53,11 @@ class fsSocket(QObject):
     flow = pyqtSignal([dict])		# man, flow
     fuel = pyqtSignal([dict])		# fuel
     switch = pyqtSignal([dict])		# batt, inter, mixt, pump, carb, gear, flap
+    warn = pyqtSignal([dict])		# battery, gene, oil, fuel, flap, gear, stall
     trim = pyqtSignal([dict])		# trim
     light = pyqtSignal([dict])		# nav, strobe, nav, taxi
+    propeller = pyqtSignal([dict])	# prop
     magneto = pyqtSignal([dict])	# magneto
-    #gear = pyqtSignal([dict])		# N, R, L
-    #propeller = pyqtSignal([dict])	# prop
 
     panel = pyqtSignal([int])
     debug = pyqtSignal([str,str])
@@ -85,14 +85,15 @@ class fsSocket(QObject):
          "com": { "signal": self.com, "active": { "code": 96, "index": 0, "data": 0 }, "stby": { "code": 96, "index": 1, "data": 0 } },
          "nav": { "signal": self.nav, "active": { "code": 97, "index": 0, "data": 0 }, "stby": { "code": 97, "index": 1, "data": 0 } },
          "xpdr": { "signal": self.xpdr, "mode": { "code": 104, "index": 0, "data": 0 }, "sett": { "code": 104, "index": 1, "data": 0 } },
-         "oil": { "signal": self.oil, "temp": { "code": 50, "index": 0, "data": 0 }, "psi": { "code": 49, "index": 0, "data": 0 } },
+         "oil": { "signal": self.oil, "temp": { "code": 50, "index": 0, "data": 0, "float": 0 }, "psi": { "code": 49, "index": 0, "data": 0, "float": 0 } },
          "vacuum": { "signal": self.vacuum, "vacuum": { "code": 7, "index": 2, "data": 0 } },
          "flow": { "signal": self.flow, "man": { "code": 43, "index": 0, "data": 0, "float": 0 }, "flow": { "code": 45, "index": 0, "data": 0, "float": 0 } },
          "fuel": { "signal": self.fuel, "fuel": { "code": 63, "index": 2, "data": 0 } },
-         "switch": { "signal": self.switch, "batt": { "code": 57, "index": 0, "data": 0 }, "inter": { "code": 58, "index": 0, "data": 0 }, "mixt": { "code": 29, "index": 0, "data": 0 }, "pump": { "code": 55, "index": 0, "data": 0 }, "carbu": { "code": 30, "index": 0, "data": 0 }, "gear": { "code": 14, "index": 0, "data": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 }, "fps": { "code": 0, "index": 0, "data": 0, "float": 0 } },
-         "trim": { "signal": self.trim, "pitch": { "code": 13, "index": 0, "data": 0, "float": 0 }, "yaw": { "code": 13, "index": 2, "data": 0, "float": 0 } },
-         "light": { "signal": self.light, "nav": { "code": 106, "index": 1, "data": 0 }, "strobe": { "code": 106, "index": 3, "data": 0 }, "land": { "code": 106, "index": 4, "data": 0 }, "taxi": { "code": 106, "index": 5, "data": 0 }, "speedbrake": { "code": 13, "index": 7, "data": 0 } },
+         "switch": { "signal": self.switch, "batt": { "code": 57, "index": 0, "data": 0 }, "inter": { "code": 58, "index": 0, "data": 0 }, "mixt": { "code": 29, "index": 0, "data": 0 }, "pump": { "code": 55, "index": 0, "data": 0 }, "carbu": { "code": 30, "index": 0, "data": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 }, "fps": { "code": 0, "index": 0, "data": 0, "float": 0 } },
+         "light": { "signal": self.light, "nav": { "code": 106, "index": 1, "data": 0 }, "strobe": { "code": 106, "index": 3, "data": 0 }, "land": { "code": 106, "index": 4, "data": 0 }, "taxi": { "code": 106, "index": 5, "data": 0 }, "speedbrake": { "code": 13, "index": 6, "data": 0 } },
+         "warn": { "signal": self.warn, "battery": { "code": 57, "index": 0, "data": 0 }, "gene": { "code": 115, "index": 4, "data": 0 }, "oil": { "code": 49, "index": 0, "data": 0, "float": 0 }, "fuel": { "code": 51, "index": 0, "data": 0, "float": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 }, "gear": { "code": 14, "index": 0, "data": 0 }, "stall": { "code": 127, "index": 5, "data": 0 } },
          "magneto": { "signal": self.magneto, "mag": { "code": 32, "index": 0, "data": 0 } },
+         "trim": { "signal": self.trim, "pitch": { "code": 13, "index": 0, "data": 0, "float": 0 }, "yaw": { "code": 13, "index": 2, "data": 0, "float": 0 } },
          #"gear": { "signal": self.gear, "N": { "code": 67, "index": 0, "data": 0 }, "R": { "code": 67, "index": 1, "data": 0 }, "L": { "code": 67, "index": 2, "data": 0 } },
          #"propeller": { "signal": self.propeller, "prop": { "code": 28, "index": 0, "data": 0 } }
       }
@@ -104,7 +105,7 @@ class fsSocket(QObject):
       self.sock.bind(('', UDP_PORT))
 
       sel = bytes("DSEL0", "utf-8")
-      code = [0,3,4,7,13,14,17,18,20,29,30,32,37,43,45,49,50,55,57,58,63,96,97,98,99,101,104,106]
+      code = [0,3,4,7,13,14,17,18,20,29,30,32,37,43,45,49,50,51,55,57,58,63,96,97,98,99,101,104,106,115,127]
       data_selection_packet = pack('<5s', sel)
       for i in code:
         data_selection_packet += pack('<i', i)
@@ -152,7 +153,7 @@ class fsSocket(QObject):
     def parse(self, key):
       values = self.gauge[key]
       liste = {}
-      changed = True
+      #changed = True
       for value in values:
         if (value == "signal"): continue
         item = values[value]
@@ -161,16 +162,20 @@ class fsSocket(QObject):
             data = int(self.dataref[item["code"]][item["index"]] * 100) / 100
           else:
             data = int(self.dataref[item["code"]][item["index"]])
+          '''
           if (data != item["data"]):
             changed = True
             self.gauge[key][value]["data"] = data
             liste[value] = data
+          '''
+          self.gauge[key][value]["data"] = data
+          liste[value] = data
           
+      '''
       if (changed):
-        #print (key)
-        #print (liste)
-        #if (key == 'engine'):
         self.gauge[key]["signal"].emit(liste)
+      '''
+      self.gauge[key]["signal"].emit(liste)
         
       
     def unpack(self, raw):

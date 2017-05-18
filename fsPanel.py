@@ -25,6 +25,8 @@ class Main(QWidget):
         
         self.light = lightPanel()
         
+        self.warn = warnPanel()
+        
         self.radio = radioPanel()
         self.radio.initialize({})
         
@@ -88,6 +90,8 @@ class Main(QWidget):
           self.stack.addWidget(page)
         self.setFSLayout(DEFAULT_LAYOUT)
         
+        self.b = 0
+        
     def keyPressEvent(self, event):
         key = event.key()
         if (key == Qt.Key_1):
@@ -96,6 +100,12 @@ class Main(QWidget):
           self.setFSLayout(2)
         elif (key == Qt.Key_3):
           self.setFSLayout(3)
+        elif (key == Qt.Key_4):
+          self.setFSLayout(4)
+        elif (key == Qt.Key_5):
+          self.b = (self.b + 1) % 2
+          self.switch.setValue({'batt':self.b})
+          self.warn.setValue({'battery':self.b,'gene':1,'oil':1,'fuel':1,'gear':1})
         elif (key == Qt.Key_D):
           self.setFSLayout(0)
         elif (key == Qt.Key_Space):
@@ -144,8 +154,9 @@ class Main(QWidget):
       
         self.socket = socket
         
-        socket.switch.connect(self.switch.setSwitch)
-        socket.light.connect(self.light.setLight)
+        socket.switch.connect(self.switch.setValue)
+        socket.light.connect(self.light.setValue)
+        socket.warn.connect(self.warn.setValue)
         socket.com.connect(self.radio.setCom)
         socket.nav.connect(self.radio.setNav)
         socket.xpdr.connect(self.radio.setXpdr)

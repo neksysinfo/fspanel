@@ -12,6 +12,8 @@ class QGaugeView(QGraphicsView):
     def __init__(self):
         QGraphicsView.__init__(self)
 
+        self.param = {}
+        
         self.scene = QGraphicsScene()
 
         self.setScene(self.scene)
@@ -54,7 +56,11 @@ class airspeedGauge(QGaugeView):
         self.scene.clear()
         
         self.scene.setSceneRect(0,0,300,300)
-        self.setTransform(QTransform().scale(0.85, 0.85), False)
+        if 'scale' in data:
+          scale = data['scale']['value']
+        else:
+          scale = 0.85
+        self.setTransform(QTransform().scale(scale, scale), False)
 
         self.setRenderHint(QPainter.Antialiasing, True)
         
@@ -896,17 +902,18 @@ class oilGauge(QGaugeView):
       
       if "temp" in data:
         temp = data["temp"]
-        angle = int((temp / 130) * 100)
+        angle = int((temp / 250) * 100)
         if (temp <= 0):
            angle = 0
         elif (temp >= 100):
            angle = 100
         self.temp.setRotation(50 - angle)
+        #self.temp.setRotation(angle - 50)
         self.param['temp']['value'] = temp
         
       if "psi" in data:
         psi = data["psi"]
-        angle = int((psi / 115) * 100)
+        angle = int((psi / 25) * 100)
         if (psi <= 0):
            angle = 0
         elif (psi >= 100):
@@ -956,11 +963,19 @@ class switchPanel(QGaugeView):
         QGaugeView.__init__(self)
 
         self.led = {}
+        '''
         self.led['gray'] = QPixmap('/var/fspanel/images/led-gray.png')
         self.led['white'] = QPixmap('/var/fspanel/images/led-white.png')
-        self.led['green'] = QPixmap('/var/fspanel/images/led-green.png')
         self.led['yellow'] = QPixmap('/var/fspanel/images/led-yellow.png')
         self.led['red'] = QPixmap('/var/fspanel/images/led-red.png')
+        self.led['green'] = QPixmap('/var/fspanel/images/led-green.png')
+        '''
+        self.led['gray'] = QPixmap('/var/fspanel/images/warn-gray.png')
+        self.led['white'] = QPixmap('/var/fspanel/images/warn-white.png')
+        self.led['yellow'] = QPixmap('/var/fspanel/images/warn-yellow.png')
+        self.led['red'] = QPixmap('/var/fspanel/images/warn-red.png')
+        self.led['green'] = QPixmap('/var/fspanel/images/warn-green.png')
+        self.led['blue'] = QPixmap('/var/fspanel/images/warn-blue.png')
         
     def initialize(self, data):
       
@@ -1004,9 +1019,9 @@ class switchPanel(QGaugeView):
           self.param[key]['text'].setPos(67+110*pos,37)
           self.param[key]['text'].setBrush(Qt.black)
 
-        self.setSwitch({key: data[key]['value']})
+        self.setValue({key: data[key]['value']})
 
-    def setSwitch(self, data):
+    def setValue(self, data):
       
       for key in data:
         
@@ -1051,7 +1066,6 @@ class switchPanel(QGaugeView):
             else: item.setPixmap(self.led['gray'])
 
           self.param[key]['value'] = value
-
       
 class lightPanel(QGaugeView):
   
@@ -1059,11 +1073,19 @@ class lightPanel(QGaugeView):
         QGaugeView.__init__(self)
         
         self.led = {}
+        '''
         self.led['gray'] = QPixmap('/var/fspanel/images/led-gray.png')
         self.led['white'] = QPixmap('/var/fspanel/images/led-white.png')
-        self.led['green'] = QPixmap('/var/fspanel/images/led-green.png')
         self.led['yellow'] = QPixmap('/var/fspanel/images/led-yellow.png')
         self.led['red'] = QPixmap('/var/fspanel/images/led-red.png')
+        self.led['green'] = QPixmap('/var/fspanel/images/led-green.png')
+        '''
+        self.led['gray'] = QPixmap('/var/fspanel/images/warn-gray.png')
+        self.led['white'] = QPixmap('/var/fspanel/images/warn-white.png')
+        self.led['yellow'] = QPixmap('/var/fspanel/images/warn-yellow.png')
+        self.led['red'] = QPixmap('/var/fspanel/images/warn-red.png')
+        self.led['green'] = QPixmap('/var/fspanel/images/warn-green.png')
+        self.led['blue'] = QPixmap('/var/fspanel/images/warn-blue.png')
         
     def initialize(self, data):
       
@@ -1094,9 +1116,9 @@ class lightPanel(QGaugeView):
         self.param[key]['item'] = self.scene.addPixmap(self.led['gray'])
         self.param[key]['item'].setPos(40+110*pos,30)
         
-        self.setLight({key: data[key]['value']})
+        self.setValue({key: data[key]['value']})
 
-    def setLight(self, data):
+    def setValue(self, data):
       
       for key in data:
         
@@ -1110,6 +1132,111 @@ class lightPanel(QGaugeView):
           if (value == 1): item.setPixmap(self.led[led])
           else: item.setPixmap(self.led['gray'])
 
+
+class warnPanel(QGaugeView):
+  
+    def __init__(self):
+        QGaugeView.__init__(self)
+        
+        self.led = {}
+        self.led['gray'] = QPixmap('/var/fspanel/images/warn-gray.png')
+        self.led['white'] = QPixmap('/var/fspanel/images/warn-white.png')
+        self.led['yellow'] = QPixmap('/var/fspanel/images/warn-yellow.png')
+        self.led['red'] = QPixmap('/var/fspanel/images/warn-red.png')
+        self.led['green'] = QPixmap('/var/fspanel/images/warn-green.png')
+        self.led['blue'] = QPixmap('/var/fspanel/images/warn-blue.png')
+        
+    def initialize(self, data):
+      
+      self.param = {}
+      self.scene.clear()
+        
+      self.scene.setSceneRect(0,0,850,75)
+
+      pixmap = QPixmap('/var/fspanel/images/warn-plate-2.png')
+      self.scene.addPixmap(pixmap)
+        
+      font = QFont('Arial', 10, QFont.Light)
+      bold = QFont('Arial', 15, QFont.Bold)
+              
+      self.battery = 0
+      
+      for key in data:
+  
+        pos = data[key]['pos']
+          
+        self.param[key] = {}
+        self.param[key]['label'] = data[key]['label']
+        self.param[key]['led'] = data[key]['led']
+        self.param[key]['value'] = data[key]['value']
+
+        label = self.scene.addSimpleText(self.param[key]['label'], font)
+        #x = 57 + 110 * pos - int(label.boundingRect().width() / 2)
+        label.setPos(95+110*pos,30)
+        label.setBrush(Qt.gray)
+        
+        self.param[key]['item'] = self.scene.addPixmap(self.led['gray'])
+        self.param[key]['item'].setPos(55+110*pos,20)
+        
+        if ('text' in data[key]):
+          self.param[key]['text'] = self.scene.addSimpleText(data[key]['text'], bold)
+          self.param[key]['text'].setPos(67+110*pos,27)
+          self.param[key]['text'].setBrush(Qt.black)
+
+        self.setValue({key: data[key]['value']})
+      
+    def setValue(self, data):
+      
+      if 'battery' in data:
+        
+        self.battery = data['battery']
+        del data['battery']
+        
+      for key in data:
+        
+        if key in self.param:
+  
+          item = self.param[key]['item']
+          led = self.param[key]['led']
+          value = data[key]
+        
+          if self.battery:
+
+            if (key == 'oil'):
+              if (value < 5): item.setPixmap(self.led[led])
+              else: item.setPixmap(self.led['gray'])
+              
+            elif (key == 'fuel'):
+              if (value < 5): item.setPixmap(self.led[led])
+              else: item.setPixmap(self.led['gray'])
+
+            elif (key == 'flap'):
+
+              if (value != self.param[key]['value']):
+                delta = self.param[key]['value'] - value
+                number = round(1 / abs(delta))
+                if (value == 0):
+                  item.setPixmap(self.led['gray'])
+                  self.param[key]['text'].setText(' ')        
+                elif (value == 1):
+                  item.setPixmap(self.led['green'])
+                  self.param[key]['text'].setText(str(number))
+                  #self.param[key]['text'].setBrush(Qt.white)
+                else:
+                  item.setPixmap(self.led['yellow'])
+                  self.param[key]['text'].setText(str(round(number*value)))
+                  #self.param[key]['text'].setBrush(Qt.black)
+              
+            else:
+    
+              if (value == 1): item.setPixmap(self.led[led])
+              else: item.setPixmap(self.led['gray'])
+
+          else:
+            item.setPixmap(self.led['gray'])
+            
+          self.param[key]['value'] = value
+        
 
 class radioPanel(QGaugeView):
   

@@ -69,8 +69,8 @@ class fsDebug(QWidget):
       
       #self.thread.start()
       try:
-        self.thread.start()
-        #pass
+        #self.thread.start()
+        pass
       except Exception as exc:
         self.log.appendText('socket (%s)' % exc, 'exception')
       
