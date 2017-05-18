@@ -896,30 +896,30 @@ class oilGauge(QGaugeView):
           value = data[key]['value']
           self.param[key] = {}
           self.param[key]['value'] = value
+          self.param[key]['max'] = data[key]['max']
           self.setValue({key:value})
         
     def setValue(self, data):
       
       if "temp" in data:
         temp = data["temp"]
-        angle = int((temp / 250) * 100)
-        if (temp <= 0):
-           angle = 0
-        elif (temp >= 100):
-           angle = 100
-        self.temp.setRotation(50 - angle)
-        #self.temp.setRotation(angle - 50)
         self.param['temp']['value'] = temp
+        if (temp < 0):
+           temp = 0
+        elif (temp > self.param['temp']['max']):
+           temp = self.param['temp']['max']
+        angle = int((temp / self.param['temp']['max']) * 100)
+        self.temp.setRotation(50 - angle)
         
       if "psi" in data:
         psi = data["psi"]
-        angle = int((psi / 25) * 100)
-        if (psi <= 0):
-           angle = 0
-        elif (psi >= 100):
-           angle = 100
-        self.psi.setRotation(angle - 50)
         self.param['psi']['value'] = psi
+        if (psi < 0):
+           psi = 0
+        elif (psi > self.param['psi']['max']):
+           psi = self.param['psi']['max']
+        angle = int((psi / self.param['psi']['max']) * 100)
+        self.psi.setRotation(angle - 50)
 
 
 class trimGauge(QGaugeView):

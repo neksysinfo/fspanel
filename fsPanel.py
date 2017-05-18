@@ -60,7 +60,7 @@ class Main(QWidget):
         self.vacuum.initialize({'vacuum': {'value':0}})
         
         self.oil = oilGauge()
-        self.oil.initialize({'temp': {'value':0}, 'psi': {'value':0}})
+        self.oil.initialize({'temp': {'value':0, 'max': 250}, 'psi': {'value':0, 'max': 25}})
         
         self.vor = vorGauge()
         self.vor.initialize({'obs': {'value':0}, 'tofr': {'value':1}, 'dme': {'value':0}, 'hdef': {'value':0}, 'vdef': {'value':0}})

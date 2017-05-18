@@ -128,6 +128,7 @@ def populateLayout(parent, layout, index):
         layout.addWidget(parent.vario, 1, 2, Qt.AlignBottom)
         
         layout.addWidget(parent.oil, 2, 0, Qt.AlignCenter)
+        #parent.oil.initialize({'temp': {'value': 120, 'max': 250},'psi': {'value': 15, 'max': 25}})
         #layout.addWidget(parent.trim, 2, 1, Qt.AlignTop | Qt.AlignRight)
         layout.addWidget(parent.magneto, 2, 1, Qt.AlignCenter)
         layout.addWidget(parent.vor, 2, 2, Qt.AlignBottom)
