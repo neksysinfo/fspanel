@@ -60,7 +60,7 @@ class Main(QWidget):
         self.vacuum.initialize({'vacuum': {'value':0}})
         
         self.oil = oilGauge()
-        self.oil.initialize({'temp': {'value':0, 'max': 250}, 'psi': {'value':0, 'max': 25}})
+        self.oil.initialize({'heat': {'value':0, 'max': 250}, 'psi': {'value':0, 'max': 25}})
         
         self.vor = vorGauge()
         self.vor.initialize({'obs': {'value':0}, 'tofr': {'value':1}, 'dme': {'value':0}, 'hdef': {'value':0}, 'vdef': {'value':0}})
@@ -77,7 +77,6 @@ class Main(QWidget):
         self.ident = identPanel()
         
         self.debug = fsDebug(self)
-        #self.debug.log.keyPressEvent = self.keyPressEvent
         self.debug.keyPressEvent = self.keyPressEvent
         self.debug.appendText('debug initiated', 'info')
         self.debug.appendText('error test', 'error')
@@ -104,8 +103,8 @@ class Main(QWidget):
           self.setFSLayout(4)
         elif (key == Qt.Key_5):
           self.b = (self.b + 1) % 2
-          self.switch.setValue({'batt':self.b})
-          self.warn.setValue({'battery':self.b,'gene':1,'oil':1,'fuel':1,'gear':1})
+          self.switch.setValue({'power':self.b})
+          #self.warn.setValue({'ower':self.b,'gene':1,'oil':1,'fuel':1,'gear':1})
         elif (key == Qt.Key_D):
           self.setFSLayout(0)
         elif (key == Qt.Key_Space):
@@ -157,9 +156,10 @@ class Main(QWidget):
         socket.switch.connect(self.switch.setValue)
         socket.light.connect(self.light.setValue)
         socket.warn.connect(self.warn.setValue)
-        socket.com.connect(self.radio.setCom)
-        socket.nav.connect(self.radio.setNav)
-        socket.xpdr.connect(self.radio.setXpdr)
+        #socket.com.connect(self.radio.setCom)
+        #socket.nav.connect(self.radio.setNav)
+        #socket.xpdr.connect(self.radio.setXpdr)
+        socket.radio.connect(self.radio.setValue)
         socket.airspeed.connect(self.airspeed.setValue)
         socket.load.connect(self.accelerometer.setValue)
         socket.attitude.connect(self.attitude.setValue)
@@ -179,8 +179,8 @@ class Main(QWidget):
         
         socket.panel.connect(self.setPanel)
         socket.debug.connect(self.debug.appendText)
-
-
+        
+      
 def main():
     app = QApplication(sys.argv)
     app.setOverrideCursor(Qt.BlankCursor)

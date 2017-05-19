@@ -5,13 +5,14 @@ import time
 import json, string, math, socket, select
 from struct import *
 from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
-from fsEncoder import *
+#from fsEncoder import *
 
 
 XPVER = "1.0"
 UDP_PORT = 49003
 UDP_SENDTO_PORT = 49000
-UDP_SENDTO_IP = "192.168.1.10"
+#UDP_SENDTO_IP = "192.168.1.10"
+UDP_SENDTO_IP = "192.168.1.125"
 
 '''
 class fsWorker(QObject):
@@ -45,9 +46,10 @@ class fsSocket(QObject):
     vor = pyqtSignal([dict])		# obs, tofr, dme, hdef, vdef
     adf = pyqtSignal([dict])		# frq, card, brg
     engine = pyqtSignal([dict])		# rpm
-    com = pyqtSignal([dict])		# active, stby
-    nav = pyqtSignal([dict])		# active, stby
-    xpdr = pyqtSignal([dict])		# mode, sett
+    #com = pyqtSignal([dict])		# active, stby
+    #nav = pyqtSignal([dict])		# active, stby
+    #xpdr = pyqtSignal([dict])		# mode, sett
+    radio = pyqtSignal([dict])		# com.active, com.stby, nav.active, nav.stby, xpdr.mode, xpdr.code
     oil = pyqtSignal([dict])		# temp, pres
     vacuum = pyqtSignal([dict])		# vac
     flow = pyqtSignal([dict])		# man, flow
@@ -82,16 +84,17 @@ class fsSocket(QObject):
          "vor": { "signal": self.vor, "obs": { "code": 98, "index": 0, "data": 0 }, "tofr": { "code": 99, "index": 1, "data": 0 }, "dme": { "code": 99, "index": 4, "data": 0, "float": 0 }, "hdef": { "code": 99, "index": 5, "data": 0, "float": 0 }, "vdef": { "code": 99, "index": 6, "data": 0, "float": 0 } },
          "adf": { "signal": self.adf, "frq": { "code": 101, "index": 0, "data": 0 }, "card": { "code": 101, "index": 1, "data": 0 }, "brg": { "code": 101, "index": 2, "data": 0 } },
          "engine": { "signal": self.engine, "rpm": { "code": 37, "index": 0, "data": 0 } },
-         "com": { "signal": self.com, "active": { "code": 96, "index": 0, "data": 0 }, "stby": { "code": 96, "index": 1, "data": 0 } },
-         "nav": { "signal": self.nav, "active": { "code": 97, "index": 0, "data": 0 }, "stby": { "code": 97, "index": 1, "data": 0 } },
-         "xpdr": { "signal": self.xpdr, "mode": { "code": 104, "index": 0, "data": 0 }, "sett": { "code": 104, "index": 1, "data": 0 } },
-         "oil": { "signal": self.oil, "temp": { "code": 50, "index": 0, "data": 0, "float": 0 }, "psi": { "code": 49, "index": 0, "data": 0, "float": 0 } },
+         #"com": { "signal": self.com, "power": { "code": 57, "index": 0, "data": 0 }, "active": { "code": 96, "index": 0, "data": 0 }, "stby": { "code": 96, "index": 1, "data": 0 } },
+         #"nav": { "signal": self.nav, "power": { "code": 57, "index": 0, "data": 0 }, "active": { "code": 97, "index": 0, "data": 0 }, "stby": { "code": 97, "index": 1, "data": 0 } },
+         #"xpdr": { "signal": self.xpdr, "power": { "code": 57, "index": 0, "data": 0 }, "mode": { "code": 104, "index": 0, "data": 0 }, "sett": { "code": 104, "index": 1, "data": 0 } },
+         "radio": { "signal": self.radio, "power": { "code": 57, "index": 0, "data": 0 }, "com.active": { "code": 96, "index": 0, "data": 0 }, "com.stby": { "code": 96, "index": 1, "data": 0 }, "nav.active": { "code": 97, "index": 0, "data": 0 }, "nav.stby": { "code": 97, "index": 1, "data": 0}, "xpdr.mode": { "code": 104, "index": 0, "data": 0 }, "xpdr.code": { "code": 104, "index": 1, "data": 0 } },
+         "oil": { "signal": self.oil, "power": { "code": 57, "index": 0, "data": 0 }, "heat": { "code": 50, "index": 0, "data": 0, "float": 0 }, "psi": { "code": 49, "index": 0, "data": 0, "float": 0 } },
          "vacuum": { "signal": self.vacuum, "vacuum": { "code": 7, "index": 2, "data": 0 } },
          "flow": { "signal": self.flow, "man": { "code": 43, "index": 0, "data": 0, "float": 0 }, "flow": { "code": 45, "index": 0, "data": 0, "float": 0 } },
-         "fuel": { "signal": self.fuel, "fuel": { "code": 63, "index": 2, "data": 0 } },
-         "switch": { "signal": self.switch, "batt": { "code": 57, "index": 0, "data": 0 }, "inter": { "code": 58, "index": 0, "data": 0 }, "mixt": { "code": 29, "index": 0, "data": 0 }, "pump": { "code": 55, "index": 0, "data": 0 }, "carbu": { "code": 30, "index": 0, "data": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 }, "fps": { "code": 0, "index": 0, "data": 0, "float": 0 } },
+         "fuel": { "signal": self.fuel, "power": { "code": 57, "index": 0, "data": 0 }, "fuel": { "code": 63, "index": 2, "data": 0 } },
+         "switch": { "signal": self.switch, "power": { "code": 57, "index": 0, "data": 0 }, "gene": { "code": 58, "index": 0, "data": 0 }, "mixt": { "code": 29, "index": 0, "data": 0 }, "pump": { "code": 55, "index": 0, "data": 0 }, "carbheat": { "code": 30, "index": 0, "data": 0 }, "fps": { "code": 0, "index": 0, "data": 0, "float": 0 } },
          "light": { "signal": self.light, "nav": { "code": 106, "index": 1, "data": 0 }, "strobe": { "code": 106, "index": 3, "data": 0 }, "land": { "code": 106, "index": 4, "data": 0 }, "taxi": { "code": 106, "index": 5, "data": 0 }, "speedbrake": { "code": 13, "index": 6, "data": 0 } },
-         "warn": { "signal": self.warn, "battery": { "code": 57, "index": 0, "data": 0 }, "gene": { "code": 115, "index": 4, "data": 0 }, "oil": { "code": 49, "index": 0, "data": 0, "float": 0 }, "fuel": { "code": 51, "index": 0, "data": 0, "float": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 }, "gear": { "code": 14, "index": 0, "data": 0 }, "stall": { "code": 127, "index": 5, "data": 0 } },
+         "warn": { "signal": self.warn, "power": { "code": 57, "index": 0, "data": 0 }, "gene": { "code": 115, "index": 4, "data": 0 }, "oil": { "code": 49, "index": 0, "data": 0, "float": 0 }, "fuel": { "code": 51, "index": 0, "data": 0, "float": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 }, "gear": { "code": 14, "index": 0, "data": 0 }, "stall": { "code": 127, "index": 5, "data": 0 } },
          "magneto": { "signal": self.magneto, "mag": { "code": 32, "index": 0, "data": 0 } },
          "trim": { "signal": self.trim, "pitch": { "code": 13, "index": 0, "data": 0, "float": 0 }, "yaw": { "code": 13, "index": 2, "data": 0, "float": 0 } },
          #"gear": { "signal": self.gear, "N": { "code": 67, "index": 0, "data": 0 }, "R": { "code": 67, "index": 1, "data": 0 }, "L": { "code": 67, "index": 2, "data": 0 } },
@@ -118,7 +121,7 @@ class fsSocket(QObject):
         self.debug.emit('initialization code select', 'exception')
         #pass
 
-      rotary = fsEncoder(self.send)
+      #rotary = fsEncoder(self.send)
       self.params()
       
 

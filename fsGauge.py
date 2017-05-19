@@ -3,7 +3,7 @@
 
 import math
 
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsTextItem
 from PyQt5.QtGui import QImage, QPixmap, QTransform, QFont, QBrush, QPen, QPainter, QPainterPath
 
@@ -425,6 +425,9 @@ class altitudeGauge(QGaugeView):
         pixmap = QPixmap('/var/fspanel/images/altitude.png')
         self.gauge = self.scene.addPixmap(pixmap)
 
+        pixmap = QPixmap('/var/fspanel/images/altitude-hatch.png')
+        self.hatch = self.scene.addPixmap(pixmap)
+       
         pixmap = QPixmap('/var/fspanel/images/altitude-dial-10000.png')
         self.needle10000 = self.scene.addPixmap(pixmap)
         self.needle10000.setTransformOriginPoint(QPoint(150,150))
@@ -437,9 +440,6 @@ class altitudeGauge(QGaugeView):
         self.needle100 = self.scene.addPixmap(pixmap)
         self.needle100.setTransformOriginPoint(QPoint(150,150))
         
-        pixmap = QPixmap('/var/fspanel/images/altitude-hatch.png')
-        self.hatch = self.scene.addPixmap(pixmap)
-       
         font = QFont('Arial', 10, QFont.Light)
         self.baro = self.scene.addSimpleText('0', font)
         self.baro.setPos(226,142)
@@ -849,24 +849,40 @@ class fuelGauge(QGaugeView):
         self.zeroAngle = -60
         self.max = 115
         
+        self.power = 0
+        
         for key in data:
           value = data[key]['value']
           self.param[key] = {}
           self.param[key]['value'] = value
           self.setValue({key:value})
         
-    def setValue(self, data):
+    def display(self):
       
-      if "fuel" in data:
-        fuel = int((data["fuel"] * 0.4536) / 0.721)
+      fuel = self.param['fuel']['value']
+      
+      if self.power:
         angle = int((fuel  / self.max) * 120)
         if (angle <= 0):
-           angle = 0
+          angle = 0
         elif (angle >= 100):
-           angle = 100
-        self.needle.setRotation(self.zeroAngle + angle)
+          angle = 100
+      else:
+        angle = 0
+        
+      self.needle.setRotation(self.zeroAngle + angle)
+
+    def setValue(self, data):
+      
+      if "power" in data:
+        self.power = data["power"]
+
+      if "fuel" in data:
+        fuel = int((data["fuel"] * 0.4536) / 0.721)
         self.param['fuel']['value'] = fuel
 
+      self.display()
+      
 
 class oilGauge(QGaugeView):
   
@@ -881,9 +897,9 @@ class oilGauge(QGaugeView):
         pixmap = QPixmap('/var/fspanel/images/oil-disc.png')
         self.gauge = self.scene.addPixmap(pixmap)
         
-        pixmap = QPixmap('/var/fspanel/images/oil-temp-dial.png')
-        self.temp = self.scene.addPixmap(pixmap)
-        self.temp.setTransformOriginPoint(QPoint(40,100))
+        pixmap = QPixmap('/var/fspanel/images/oil-heat-dial.png')
+        self.heat = self.scene.addPixmap(pixmap)
+        self.heat.setTransformOriginPoint(QPoint(40,100))
         
         pixmap = QPixmap('/var/fspanel/images/oil-psi-dial.png')
         self.psi = self.scene.addPixmap(pixmap)
@@ -892,6 +908,8 @@ class oilGauge(QGaugeView):
         pixmap = QPixmap('/var/fspanel/images/oil-glass.png')
         self.glass = self.scene.addPixmap(pixmap)
               
+        self.power = 0
+        
         for key in data:
           value = data[key]['value']
           self.param[key] = {}
@@ -899,28 +917,48 @@ class oilGauge(QGaugeView):
           self.param[key]['max'] = data[key]['max']
           self.setValue({key:value})
         
+    def display(self):
+      
+      if self.power:
+
+        heat = self.param['heat']['value']
+
+        if (heat < 0):
+          heat = 0
+        elif (heat > self.param['heat']['max']):
+          heat = self.param['heat']['max']
+        angle = int((heat / self.param['heat']['max']) * 100)
+        self.heat.setRotation(50 - angle)
+
+        psi = self.param['psi']['value']
+  
+        if (psi < 0):
+          psi = 0
+        elif (psi > self.param['psi']['max']):
+          psi = self.param['psi']['max']
+        angle = int((psi / self.param['psi']['max']) * 100)
+        self.psi.setRotation(angle - 50)
+
+      else:
+        self.heat.setRotation(50)
+        self.psi.setRotation(-50)
+
+
     def setValue(self, data):
       
-      if "temp" in data:
-        temp = data["temp"]
-        self.param['temp']['value'] = temp
-        if (temp < 0):
-           temp = 0
-        elif (temp > self.param['temp']['max']):
-           temp = self.param['temp']['max']
-        angle = int((temp / self.param['temp']['max']) * 100)
-        self.temp.setRotation(50 - angle)
+      if "power" in data:
+        self.power = data["power"]
+
+      if "heat" in data:
+        heat = data["heat"]
+        self.param['heat']['value'] = heat
         
       if "psi" in data:
         psi = data["psi"]
         self.param['psi']['value'] = psi
-        if (psi < 0):
-           psi = 0
-        elif (psi > self.param['psi']['max']):
-           psi = self.param['psi']['max']
-        angle = int((psi / self.param['psi']['max']) * 100)
-        self.psi.setRotation(angle - 50)
 
+      self.display()
+      
 
 class trimGauge(QGaugeView):
   
@@ -959,6 +997,8 @@ class trimGauge(QGaugeView):
 
 class switchPanel(QGaugeView):
   
+    poweroff = pyqtSignal(int)
+    
     def __init__(self):
         QGaugeView.__init__(self)
 
@@ -1010,15 +1050,10 @@ class switchPanel(QGaugeView):
         x = 72 + 110 * pos - int(label.boundingRect().width() / 2)
         label.setPos(x,8)
         label.setBrush(Qt.white)
-          
+        
         self.param[key]['item'] = self.scene.addPixmap(self.led['gray'])
         self.param[key]['item'].setPos(55+110*pos,30)
         
-        if ('text' in data[key]):
-          self.param[key]['text'] = self.scene.addSimpleText(data[key]['text'], bold)
-          self.param[key]['text'].setPos(67+110*pos,37)
-          self.param[key]['text'].setBrush(Qt.black)
-
         self.setValue({key: data[key]['value']})
 
     def setValue(self, data):
@@ -1044,27 +1079,12 @@ class switchPanel(QGaugeView):
               self.param[key]['text'].setBrush(Qt.gray)
             else:
               self.param[key]['text'].setBrush(Qt.green)
-              
-          elif (key == 'flap'):
 
-            if (value != self.param[key]['value']):
-              delta = self.param[key]['value'] - value
-              number = round(1 / abs(delta))
-              if (value == 0):
-                item.setPixmap(self.led['gray'])
-                self.param[key]['text'].setText(' ')        
-              elif (value == 1):
-                item.setPixmap(self.led['red'])
-                self.param[key]['text'].setText(str(number))
-              else:
-                item.setPixmap(self.led['yellow'])
-                self.param[key]['text'].setText(str(round(number*value)))
-              
           else:
 
             if (value == 1): item.setPixmap(self.led[led])
             else: item.setPixmap(self.led['gray'])
-
+            
           self.param[key]['value'] = value
       
 class lightPanel(QGaugeView):
@@ -1159,7 +1179,7 @@ class warnPanel(QGaugeView):
       font = QFont('Arial', 10, QFont.Light)
       bold = QFont('Arial', 15, QFont.Bold)
               
-      self.battery = 0
+      self.power = 0
       
       for key in data:
   
@@ -1179,64 +1199,72 @@ class warnPanel(QGaugeView):
         self.param[key]['item'].setPos(55+110*pos,20)
         
         if ('text' in data[key]):
-          self.param[key]['text'] = self.scene.addSimpleText(data[key]['text'], bold)
+          self.param[key]['extra'] = data[key]['text']
+          self.param[key]['text'] = self.scene.addSimpleText('', bold)
           self.param[key]['text'].setPos(67+110*pos,27)
           self.param[key]['text'].setBrush(Qt.black)
 
         self.setValue({key: data[key]['value']})
       
+    def display(self):
+      
+      for key in self.param:
+        
+        item = self.param[key]['item']
+        led = self.param[key]['led']
+        value = self.param[key]['value']
+        
+        if self.power:
+
+          if (key == 'oil'):
+            if (value < 5): item.setPixmap(self.led[led])
+            else: item.setPixmap(self.led['gray'])
+              
+          elif (key == 'fuel'):
+            if (value < 5): item.setPixmap(self.led[led])
+            else: item.setPixmap(self.led['gray'])
+
+          elif (key == 'flap'):
+            '''
+            if (value != self.param[key]['value']):
+              delta = self.param[key]['value'] - value
+              number = round(1 / abs(delta))
+            '''
+            number = int(self.param[key]['extra'])
+            
+            if (value == 0):
+                item.setPixmap(self.led['gray'])
+                self.param[key]['text'].setText(' ')        
+            elif (value == 1):
+                item.setPixmap(self.led['green'])
+                self.param[key]['text'].setText(str(number))
+                #self.param[key]['text'].setBrush(Qt.white)
+            else:
+                item.setPixmap(self.led['yellow'])
+                self.param[key]['text'].setText(str(round(number*value)))
+                #self.param[key]['text'].setBrush(Qt.black)
+              
+          else:
+    
+            if (value == 1): item.setPixmap(self.led[led])
+            else: item.setPixmap(self.led['gray'])
+
+        else:
+            item.setPixmap(self.led['gray'])
+
     def setValue(self, data):
       
-      if 'battery' in data:
-        
-        self.battery = data['battery']
-        del data['battery']
+      if 'power' in data:
+        self.power = data['power']
+        del data['power']
         
       for key in data:
-        
         if key in self.param:
-  
-          item = self.param[key]['item']
-          led = self.param[key]['led']
-          value = data[key]
-        
-          if self.battery:
-
-            if (key == 'oil'):
-              if (value < 5): item.setPixmap(self.led[led])
-              else: item.setPixmap(self.led['gray'])
-              
-            elif (key == 'fuel'):
-              if (value < 5): item.setPixmap(self.led[led])
-              else: item.setPixmap(self.led['gray'])
-
-            elif (key == 'flap'):
-
-              if (value != self.param[key]['value']):
-                delta = self.param[key]['value'] - value
-                number = round(1 / abs(delta))
-                if (value == 0):
-                  item.setPixmap(self.led['gray'])
-                  self.param[key]['text'].setText(' ')        
-                elif (value == 1):
-                  item.setPixmap(self.led['green'])
-                  self.param[key]['text'].setText(str(number))
-                  #self.param[key]['text'].setBrush(Qt.white)
-                else:
-                  item.setPixmap(self.led['yellow'])
-                  self.param[key]['text'].setText(str(round(number*value)))
-                  #self.param[key]['text'].setBrush(Qt.black)
-              
-            else:
-    
-              if (value == 1): item.setPixmap(self.led[led])
-              else: item.setPixmap(self.led['gray'])
-
-          else:
-            item.setPixmap(self.led['gray'])
-            
+          value = data[key]     
           self.param[key]['value'] = value
-        
+
+      self.display()
+      
 
 class radioPanel(QGaugeView):
   
@@ -1254,6 +1282,10 @@ class radioPanel(QGaugeView):
         pixmap = QPixmap('/var/fspanel/images/radio-plate.png')
         self.panel = self.scene.addPixmap(pixmap)
         self.panel.setPos(5,25)
+        
+        self.param['power'] = {}
+        
+        self.space = QPixmap('/var/fspanel/images/digit-red-space.png')
         
         self.red = []
         self.red.append(QPixmap('/var/fspanel/images/digit-red-0.png'))
@@ -1276,74 +1308,89 @@ class radioPanel(QGaugeView):
         self.white.append(QPixmap('/var/fspanel/images/digit-white-5.png'))
         self.white.append(QPixmap('/var/fspanel/images/digit-white-6.png'))
         self.white.append(QPixmap('/var/fspanel/images/digit-white-7.png'))
+        self.white.append(QPixmap('/var/fspanel/images/digit-white-space.png'))
 
         font = QFont('Arial', 12, QFont.Light)
         label = self.scene.addSimpleText('COM', font)
         label.setPos(40,25)
         label.setBrush(Qt.white)
 
-        self.comfreq1 = self.scene.addPixmap(self.red[0])
-        self.comfreq1.setPos(55,65)
-        self.comfreq2 = self.scene.addPixmap(self.red[0])
-        self.comfreq2.setPos(90,65)
-        self.comfreq3 = self.scene.addPixmap(self.red[0])
-        self.comfreq3.setPos(125,65)
-        self.comfreq4 = self.scene.addPixmap(self.red[0])
-        self.comfreq4.setPos(170,65)
-        self.comfreq5 = self.scene.addPixmap(self.red[0])
-        self.comfreq5.setPos(205,65)
+        self.com = {}
+        self.com['active'] = []
+        self.com['active'].append(self.scene.addPixmap(self.space))
+        self.com['active'][0].setPos(58,65)   
+        self.com['active'].append(self.scene.addPixmap(self.space))
+        self.com['active'][1].setPos(93,65)
+        self.com['active'].append(self.scene.addPixmap(self.space))
+        self.com['active'][2].setPos(128,65)
+        self.com['active'].append(self.scene.addPixmap(self.space))
+        self.com['active'][3].setPos(173,65)
+        self.com['active'].append(self.scene.addPixmap(self.space))
+        self.com['active'][4].setPos(208,65)
         
-        self.comstby1 = self.scene.addPixmap(self.red[0])
-        self.comstby1.setPos(265,65)
-        self.comstby2 = self.scene.addPixmap(self.red[0])
-        self.comstby2.setPos(300,65)
-        self.comstby3 = self.scene.addPixmap(self.red[0])
-        self.comstby3.setPos(335,65)
-        self.comstby4 = self.scene.addPixmap(self.red[0])
-        self.comstby4.setPos(380,65)
-        self.comstby5 = self.scene.addPixmap(self.red[0])
-        self.comstby5.setPos(415,65)
+        self.com['stby'] = []
+        self.com['stby'].append(self.scene.addPixmap(self.space))
+        self.com['stby'][0].setPos(266,65)   
+        self.com['stby'].append(self.scene.addPixmap(self.space))
+        self.com['stby'][1].setPos(301,65)
+        self.com['stby'].append(self.scene.addPixmap(self.space))
+        self.com['stby'][2].setPos(336,65)
+        self.com['stby'].append(self.scene.addPixmap(self.space))
+        self.com['stby'][3].setPos(381,65)
+        self.com['stby'].append(self.scene.addPixmap(self.space))
+        self.com['stby'][4].setPos(416,65)
+        
+        self.param['com'] = {}
         
         font = QFont('Arial', 12, QFont.Light)
         label = self.scene.addSimpleText('NAV', font)
         label.setPos(40,150)
         label.setBrush(Qt.white)
 
-        self.navfreq1 = self.scene.addPixmap(self.red[0])
-        self.navfreq1.setPos(55,185)
-        self.navfreq2 = self.scene.addPixmap(self.red[0])
-        self.navfreq2.setPos(90,185)
-        self.navfreq3 = self.scene.addPixmap(self.red[0])
-        self.navfreq3.setPos(125,185)
-        self.navfreq4 = self.scene.addPixmap(self.red[0])
-        self.navfreq4.setPos(170,185)
-        self.navfreq5 = self.scene.addPixmap(self.red[0])
-        self.navfreq5.setPos(205,185)
+        self.nav = {}
+        self.nav['active'] = []
+        self.nav['active'].append(self.scene.addPixmap(self.space))
+        self.nav['active'][0].setPos(58,185)   
+        self.nav['active'].append(self.scene.addPixmap(self.space))
+        self.nav['active'][1].setPos(93,185)
+        self.nav['active'].append(self.scene.addPixmap(self.space))
+        self.nav['active'][2].setPos(128,185)
+        self.nav['active'].append(self.scene.addPixmap(self.space))
+        self.nav['active'][3].setPos(173,185)
+        self.nav['active'].append(self.scene.addPixmap(self.space))
+        self.nav['active'][4].setPos(208,185)
         
-        self.navstby1 = self.scene.addPixmap(self.red[0])
-        self.navstby1.setPos(265,185)
-        self.navstby2 = self.scene.addPixmap(self.red[0])
-        self.navstby2.setPos(300,185)
-        self.navstby3 = self.scene.addPixmap(self.red[0])
-        self.navstby3.setPos(335,185)
-        self.navstby4 = self.scene.addPixmap(self.red[0])
-        self.navstby4.setPos(380,185)
-        self.navstby5 = self.scene.addPixmap(self.red[0])
-        self.navstby5.setPos(415,185)
+        self.nav['stby'] = []
+        self.nav['stby'].append(self.scene.addPixmap(self.space))
+        self.nav['stby'][0].setPos(266,185)   
+        self.nav['stby'].append(self.scene.addPixmap(self.space))
+        self.nav['stby'][1].setPos(301,185)
+        self.nav['stby'].append(self.scene.addPixmap(self.space))
+        self.nav['stby'][2].setPos(336,185)
+        self.nav['stby'].append(self.scene.addPixmap(self.space))
+        self.nav['stby'][3].setPos(381,185)
+        self.nav['stby'].append(self.scene.addPixmap(self.space))
+        self.nav['stby'][4].setPos(416,185)
+        
+        self.param['nav'] = {}
         
         font = QFont('Arial', 12, QFont.Light)
         label = self.scene.addSimpleText('TRANSPONDEUR', font)
         label.setPos(40,275)
         label.setBrush(Qt.white)
 
-        self.xpdr1 = self.scene.addPixmap(self.white[0])
-        self.xpdr1.setPos(60,300)
-        self.xpdr2 = self.scene.addPixmap(self.white[0])
-        self.xpdr2.setPos(110,300)
-        self.xpdr3 = self.scene.addPixmap(self.white[0])
-        self.xpdr3.setPos(160,300)
-        self.xpdr4 = self.scene.addPixmap(self.white[0])
-        self.xpdr4.setPos(210,300)
+        self.xpdr = {}
+        self.xpdr['code'] = []
+        self.xpdr['code'].append(self.scene.addPixmap(self.white[8]))
+        self.xpdr['code'][0].setPos(60,300)
+        self.xpdr['code'].append(self.scene.addPixmap(self.white[8]))
+        self.xpdr['code'][1].setPos(110,300)
+        self.xpdr['code'].append(self.scene.addPixmap(self.white[8]))
+        self.xpdr['code'][2].setPos(160,300)
+        self.xpdr['code'].append(self.scene.addPixmap(self.white[8]))
+        self.xpdr['code'][3].setPos(210,300)
+        
+        self.param['xpdr'] = {}
         
         font = QFont('Arial', 9, QFont.Light)
         label = self.scene.addSimpleText('OFF', font)
@@ -1367,87 +1414,196 @@ class radioPanel(QGaugeView):
         self.button.setPos(345,325)
         self.button.setTransformOriginPoint(QPoint(22,22))
         
-        self.setCom({"active":0, "stby":0})
-        self.setNav({"active":0, "stby":0})
-        self.setXpdr({"mode":0, "sett":0})
+        #self.setCom({"power":0, "active":0, "stby":0})
+        #self.setNav({"power":0, "active":0, "stby":0})
+        #self.setXpdr({"power":0, "mode":0, "sett":0})
+        self.setValue({"power":0, "com.active":0, "com.stby":0, "nav.active":0, "nav.stby":0, "xpdr.mode":0, "xpdr.code":0})
         
+    '''
+    def displayCom(self, channel):
+      
+      power = self.param['power']['value']
+
+      if power:
+          frequence = "%05d" % self.param['com'][channel]
+          n = int(frequence[:1])
+          self.com[channel][0].setPixmap(self.red[n])
+          n = int(frequence[1:2])
+          self.com[channel][1].setPixmap(self.red[n])
+          n = int(frequence[2:3])
+          self.com[channel][2].setPixmap(self.red[n])
+          n = int(frequence[3:4])
+          self.com[channel][3].setPixmap(self.red[n])
+          n = int(frequence[4:5])
+          self.com[channel][4].setPixmap(self.red[n])
+      else:
+        for i in range(5):
+          self.com[channel][i].setPixmap(self.space)
+
     def setCom(self, value):
       
+      if "power" in value:
+        power = value['power']
+        self.param['power']['value'] = power
+        
       if "active" in value:
         active = value["active"]
-        sett = "%05d" % active
-        n = int(sett[:1])
-        self.comfreq1.setPixmap(self.red[n])
-        n = int(sett[1:2])
-        self.comfreq2.setPixmap(self.red[n])
-        n = int(sett[2:3])
-        self.comfreq3.setPixmap(self.red[n])
-        n = int(sett[3:4])
-        self.comfreq4.setPixmap(self.red[n])
-        n = int(sett[4:5])
-        self.comfreq5.setPixmap(self.red[n])
+        self.param['com']['active'] = active
 
       if "stby" in value:
         stby = value["stby"]
-        sett = "%05d" % stby
-        n = int(sett[:1])
-        self.comstby1.setPixmap(self.red[n])
-        n = int(sett[1:2])
-        self.comstby2.setPixmap(self.red[n])
-        n = int(sett[2:3])
-        self.comstby3.setPixmap(self.red[n])
-        n = int(sett[3:4])
-        self.comstby4.setPixmap(self.red[n])
-        n = int(sett[4:5])
-        self.comstby5.setPixmap(self.red[n])
+        self.param['com']['stby'] = stby
 
+      self.displayCom('active')
+      self.displayCom('stby')
+      
+
+    def displayNav(self, channel):
+      
+      power = self.param['power']['value']
+
+      if power:
+          frequence = "%05d" % self.param['nav'][channel]
+          n = int(frequence[:1])
+          self.nav[channel][0].setPixmap(self.red[n])
+          n = int(frequence[1:2])
+          self.nav[channel][1].setPixmap(self.red[n])
+          n = int(frequence[2:3])
+          self.nav[channel][2].setPixmap(self.red[n])
+          n = int(frequence[3:4])
+          self.nav[channel][3].setPixmap(self.red[n])
+          n = int(frequence[4:5])
+          self.nav[channel][4].setPixmap(self.red[n])
+      else:
+        for i in range(5):
+          self.nav[channel][i].setPixmap(self.space)
 
     def setNav(self, value):
+      
+      if "power" in value:
+        power = value['power']
+        self.param['power']['value'] = power
+        
       if "active" in value:
         active = value["active"]
-        sett = "%05d" % active
-        n = int(sett[:1])
-        self.navfreq1.setPixmap(self.red[n])
-        n = int(sett[1:2])
-        self.navfreq2.setPixmap(self.red[n])
-        n = int(sett[2:3])
-        self.navfreq3.setPixmap(self.red[n])
-        n = int(sett[3:4])
-        self.navfreq4.setPixmap(self.red[n])
-        n = int(sett[4:5])
-        self.navfreq5.setPixmap(self.red[n])
+        self.param['nav']['active'] = active
 
       if "stby" in value:
         stby = value["stby"]
-        sett = "%05d" % stby
-        n = int(sett[:1])
-        self.navstby1.setPixmap(self.red[n])
-        n = int(sett[1:2])
-        self.navstby2.setPixmap(self.red[n])
-        n = int(sett[2:3])
-        self.navstby3.setPixmap(self.red[n])
-        n = int(sett[3:4])
-        self.navstby4.setPixmap(self.red[n])
-        n = int(sett[4:5])
-        self.navstby5.setPixmap(self.red[n])
+        self.param['nav']['stby'] = stby
 
+      self.displayNav('active')
+      self.displayNav('stby')
 
     def setXpdr(self, value):
+      
+      if "power" in value:
+        power = value['power']
+        self.param['power']['value'] = power
+        
       if "sett" in value:
-        sett = value["sett"]
-        sett = "{:04d}".format(sett)
-        n = int(sett[:1])
-        self.xpdr1.setPixmap(self.white[n])
-        n = int(sett[1:2])
-        self.xpdr2.setPixmap(self.white[n])
-        n = int(sett[2:3])
-        self.xpdr3.setPixmap(self.white[n])
-        n = int(sett[3:4])
-        self.xpdr4.setPixmap(self.white[n])
+        code = value["sett"]
+        self.param['xpdr']['code'] = code
+        
+      power = self.param['power']['value']
+      code = self.param['xpdr']['code']
+
+      if power:
+        code = "{:04d}".format(code)
+      else:
+        code = "{:04d}".format(8888)
+      n = int(code[:1])
+      self.xpdr['code'][0].setPixmap(self.white[n])
+      n = int(code[1:2])
+      self.xpdr['code'][1].setPixmap(self.white[n])
+      n = int(code[2:3])
+      self.xpdr['code'][2].setPixmap(self.white[n])
+      n = int(code[3:4])
+      self.xpdr['code'][3].setPixmap(self.white[n])
 
       if "mode" in value:
         mode = value["mode"]
+        self.param['xpdr']['mode'] = mode
         self.button.setRotation(mode * 45)
+
+    '''
+    
+    def display(self):
+      
+      for channel in ['active', 'stby']:
+	
+        if self.power:
+          frequence = "%05d" % self.param['com'][channel]
+          n = int(frequence[:1])
+          self.com[channel][0].setPixmap(self.red[n])
+          n = int(frequence[1:2])
+          self.com[channel][1].setPixmap(self.red[n])
+          n = int(frequence[2:3])
+          self.com[channel][2].setPixmap(self.red[n])
+          n = int(frequence[3:4])
+          self.com[channel][3].setPixmap(self.red[n])
+          n = int(frequence[4:5])
+          self.com[channel][4].setPixmap(self.red[n])
+        else:
+          for i in range(5):
+            self.com[channel][i].setPixmap(self.space)
+
+        if self.power:
+          frequence = "%05d" % self.param['nav'][channel]
+          n = int(frequence[:1])
+          self.nav[channel][0].setPixmap(self.red[n])
+          n = int(frequence[1:2])
+          self.nav[channel][1].setPixmap(self.red[n])
+          n = int(frequence[2:3])
+          self.nav[channel][2].setPixmap(self.red[n])
+          n = int(frequence[3:4])
+          self.nav[channel][3].setPixmap(self.red[n])
+          n = int(frequence[4:5])
+          self.nav[channel][4].setPixmap(self.red[n])
+        else:
+          for i in range(5):
+            self.nav[channel][i].setPixmap(self.space)
+
+      if self.power and self.param['xpdr']['mode']:
+        code = "{:04d}".format(self.param['xpdr']['code'])
+      else:
+        code = "{:04d}".format(8888)
+        
+      n = int(code[:1])
+      self.xpdr['code'][0].setPixmap(self.white[n])
+      n = int(code[1:2])
+      self.xpdr['code'][1].setPixmap(self.white[n])
+      n = int(code[2:3])
+      self.xpdr['code'][2].setPixmap(self.white[n])
+      n = int(code[3:4])
+      self.xpdr['code'][3].setPixmap(self.white[n])
+
+      self.button.setRotation(self.param['xpdr']['mode'] * 45)
+
+    def setValue(self, data):
+      
+      if "power" in data:
+        self.power = data['power']
+        
+      if "com.active" in data:
+        self.param['com']['active'] = data["com.active"]
+
+      if "com.stby" in data:
+        self.param['com']['stby'] = data["com.stby"]
+
+      if "nav.active" in data:
+        self.param['nav']['active'] = data["nav.active"]
+
+      if "nav.stby" in data:
+        self.param['nav']['stby'] = data["nav.stby"]
+
+      if "xpdr.code" in data:
+        self.param['xpdr']['code'] = data["xpdr.code"]
+        
+      if "xpdr.mode" in data:
+        self.param['xpdr']['mode'] = data["xpdr.mode"]
+        
+      self.display()
 
 
 class identPanel(QGaugeView):
