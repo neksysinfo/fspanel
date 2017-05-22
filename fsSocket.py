@@ -5,13 +5,14 @@ import time
 import json, string, math, socket, select
 from struct import *
 from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
-from fsEncoder import *
+#from fsEncoder import *
 
 
 XPVER = "1.0"
 UDP_PORT = 49003
 UDP_SENDTO_PORT = 49000
-UDP_SENDTO_IP = "192.168.1.10"
+#UDP_SENDTO_IP = "192.168.1.10"
+UDP_SENDTO_IP = "192.168.1.125"
 
 '''
 class fsWorker(QObject):
@@ -45,9 +46,6 @@ class fsSocket(QObject):
     vor = pyqtSignal([dict])		# obs, tofr, dme, hdef, vdef
     adf = pyqtSignal([dict])		# frq, card, brg
     engine = pyqtSignal([dict])		# rpm
-    #com = pyqtSignal([dict])		# active, stby
-    #nav = pyqtSignal([dict])		# active, stby
-    #xpdr = pyqtSignal([dict])		# mode, sett
     radio = pyqtSignal([dict])		# com.active, com.stby, nav.active, nav.stby, xpdr.mode, xpdr.code
     oil = pyqtSignal([dict])		# temp, pres
     vacuum = pyqtSignal([dict])		# vac
@@ -83,9 +81,6 @@ class fsSocket(QObject):
          "vor": { "signal": self.vor, "obs": { "code": 98, "index": 0, "data": 0 }, "tofr": { "code": 99, "index": 1, "data": 0 }, "dme": { "code": 99, "index": 4, "data": 0, "float": 0 }, "hdef": { "code": 99, "index": 5, "data": 0, "float": 0 }, "vdef": { "code": 99, "index": 6, "data": 0, "float": 0 } },
          "adf": { "signal": self.adf, "frq": { "code": 101, "index": 0, "data": 0 }, "card": { "code": 101, "index": 1, "data": 0 }, "brg": { "code": 101, "index": 2, "data": 0 } },
          "engine": { "signal": self.engine, "rpm": { "code": 37, "index": 0, "data": 0 } },
-         #"com": { "signal": self.com, "power": { "code": 57, "index": 0, "data": 0 }, "active": { "code": 96, "index": 0, "data": 0 }, "stby": { "code": 96, "index": 1, "data": 0 } },
-         #"nav": { "signal": self.nav, "power": { "code": 57, "index": 0, "data": 0 }, "active": { "code": 97, "index": 0, "data": 0 }, "stby": { "code": 97, "index": 1, "data": 0 } },
-         #"xpdr": { "signal": self.xpdr, "power": { "code": 57, "index": 0, "data": 0 }, "mode": { "code": 104, "index": 0, "data": 0 }, "sett": { "code": 104, "index": 1, "data": 0 } },
          "radio": { "signal": self.radio, "power": { "code": 57, "index": 0, "data": 0 }, "com.active": { "code": 96, "index": 0, "data": 0 }, "com.stby": { "code": 96, "index": 1, "data": 0 }, "nav.active": { "code": 97, "index": 0, "data": 0 }, "nav.stby": { "code": 97, "index": 1, "data": 0}, "xpdr.mode": { "code": 104, "index": 0, "data": 0 }, "xpdr.code": { "code": 104, "index": 1, "data": 0 } },
          "oil": { "signal": self.oil, "power": { "code": 57, "index": 0, "data": 0 }, "heat": { "code": 50, "index": 0, "data": 0, "float": 0 }, "psi": { "code": 49, "index": 0, "data": 0, "float": 0 } },
          "vacuum": { "signal": self.vacuum, "vacuum": { "code": 7, "index": 2, "data": 0 } },
@@ -120,7 +115,7 @@ class fsSocket(QObject):
         self.debug.emit('initialization code select', 'exception')
         #pass
 
-      rotary = fsEncoder(self.send)
+      #rotary = fsEncoder(self.send)
       self.params()
       
 
@@ -217,44 +212,47 @@ class fsSocket(QObject):
         if ref == "outer":
           if (dat > 0):
             data_selection_packet += bytes("sim/radios/stby_com1_coarse_up", "utf-8")
-            self.gauge[idx]["stby"]["data"] += 100
+            self.gauge["radio"]["com.stby"]["data"] += 100
           else:
             data_selection_packet += bytes("sim/radios/stby_com1_coarse_down", "utf-8")
-            self.gauge[idx]["stby"]["data"] -= 100
+            self.gauge["radio"]["com.stby"]["data"] -= 100
         elif ref == "inner":
           if (dat > 0):
             data_selection_packet += bytes("sim/radios/stby_com1_fine_up", "utf-8")
-            self.gauge[idx]["stby"]["data"] += 5
+            self.gauge["radio"]["com.stby"]["data"] += 5
           else:
             data_selection_packet += bytes("sim/radios/stby_com1_fine_down", "utf-8")
-            self.gauge[idx]["stby"]["data"] -= 5
+            self.gauge["radio"]["com.stby"]["data"] -= 5
         elif ref == "button":
           data_selection_packet += bytes("sim/radios/com1_standy_flip", "utf-8")
-          tmp = self.gauge[idx]["stby"]["data"]
-          self.gauge[idx]["stby"]["data"] = self.gauge[idx]["active"]["data"]
-          self.gauge[idx]["active"]["data"] = tmp
+          tmp = self.gauge["radio"]["com.stby"]["data"]
+          self.gauge["radio"]["com.stby"]["data"] = self.gauge["radio"]["com.active"]["data"]
+          self.gauge["radio"]["com.active"]["data"] = tmp
         
-        liste["active"] = self.gauge[idx]["active"]["data"]
-        liste["stby"] = self.gauge[idx]["stby"]["data"]
-        self.gauge[idx]["signal"].emit(liste)
+        liste["com.active"] = self.gauge["radio"]["com.active"]["data"]
+        liste["com.stby"] = self.gauge["radio"]["com.stby"]["data"]
+        self.gauge["radio"]["signal"].emit(liste)
         
       elif (idx == "nav"):
         if ref == "outer":
           if (dat > 0):
             data_selection_packet += bytes("sim/radios/stby_nav1_coarse_up", "utf-8")
-            self.gauge[idx]["stby"]["data"] += 100
+            self.gauge["radio"]["nav.stby"]["data"] += 100
           else:
             data_selection_packet += bytes("sim/radios/stby_nav1_coarse_down", "utf-8")
-            self.gauge[idx]["stby"]["data"] -= 100
+            self.gauge["radio"]["nav.stby"]["data"] -= 100
         elif ref == "inner":
           if (dat > 0):
             data_selection_packet += bytes("sim/radios/stby_nav1_fine_up", "utf-8")
-            self.gauge[idx]["stby"]["data"] += 5
+            self.gauge["radio"]["nav.stby"]["data"] += 5
           else:
             data_selection_packet += bytes("sim/radios/stby_nav1_fine_down", "utf-8")
-            self.gauge[idx]["stby"]["data"] -= 5
+            self.gauge["radio"]["nav.stby"]["data"] -= 5
         elif ref == "button":
           data_selection_packet += bytes("sim/radios/nav1_standy_flip", "utf-8")
+          tmp = self.gauge["radio"]["nav.stby"]["data"]
+          self.gauge["radio"]["nav.stby"]["data"] = self.gauge["radio"]["nav.active"]["data"]
+          self.gauge["radio"]["nav.active"]["data"] = tmp
         elif ref == "coder":
           #print ("coder %s" % dat)
           loop = abs(dat)
@@ -263,9 +261,9 @@ class fsSocket(QObject):
           else:
             data_selection_packet += bytes("sim/radios/obs1_down", "utf-8")
 
-        liste["active"] = self.gauge[idx]["active"]["data"]
-        liste["stby"] = self.gauge[idx]["stby"]["data"]
-        self.gauge[idx]["signal"].emit(liste)
+        liste["nav.active"] = self.gauge["radio"]["nav.active"]["data"]
+        liste["nav.stby"] = self.gauge["radio"]["nav.stby"]["data"]
+        self.gauge["radio"]["signal"].emit(liste)
         
       elif (idx == "adf"):
         if ref == "outer":
