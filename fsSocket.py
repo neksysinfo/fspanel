@@ -5,14 +5,13 @@ import time
 import json, string, math, socket, select
 from struct import *
 from PyQt5.QtCore import QThread, QObject, pyqtSignal, pyqtSlot
-#from fsEncoder import *
+from fsEncoder import *
 
 
 XPVER = "1.0"
 UDP_PORT = 49003
 UDP_SENDTO_PORT = 49000
-#UDP_SENDTO_IP = "192.168.1.10"
-UDP_SENDTO_IP = "192.168.1.125"
+UDP_SENDTO_IP = "192.168.1.10"
 
 '''
 class fsWorker(QObject):
@@ -115,7 +114,7 @@ class fsSocket(QObject):
         self.debug.emit('initialization code select', 'exception')
         #pass
 
-      #rotary = fsEncoder(self.send)
+      rotary = fsEncoder(self.send)
       self.params()
       
 
