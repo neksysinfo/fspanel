@@ -218,10 +218,10 @@ class fsSocket(QObject):
         elif ref == "inner":
           if (dat > 0):
             data_selection_packet += bytes("sim/radios/stby_com1_fine_up", "utf-8")
-            self.gauge["radio"]["com.stby"]["data"] += 5
+            self.gauge["radio"]["com.stby"]["data"] += 2.5
           else:
             data_selection_packet += bytes("sim/radios/stby_com1_fine_down", "utf-8")
-            self.gauge["radio"]["com.stby"]["data"] -= 5
+            self.gauge["radio"]["com.stby"]["data"] -= 2.5
         elif ref == "button":
           data_selection_packet += bytes("sim/radios/com1_standy_flip", "utf-8")
           tmp = self.gauge["radio"]["com.stby"]["data"]

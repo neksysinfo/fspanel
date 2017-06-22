@@ -21,7 +21,7 @@ class QGaugeView(QGraphicsView):
 
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
         
         for key in data:
@@ -52,7 +52,7 @@ class airspeedGauge(QGaugeView):
   
     def initialize(self, data):
       
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
         
         self.scene.setSceneRect(0,0,300,300)
@@ -74,11 +74,13 @@ class airspeedGauge(QGaugeView):
         value = data[key]['value']
         self.param[key] = {}
         self.param[key]['value'] = value
+        self.param[key]['unit'] = data[key]['unit']
 
         vs0 = data[key]['vs0']
         vs1 = data[key]['vs1']
         vfe = data[key]['vfe']
         vno = data[key]['vno']
+        vne = data[key]['vne']
         vne = data[key]['vne']
         self.maxspeed = data[key]['max']
         
@@ -108,13 +110,18 @@ class airspeedGauge(QGaugeView):
         path.arcTo(50, 50, 200, 200, a1, a2)
         self.scene.addPath(path, pen)
         
-        for a in range(50, self.maxspeed + 1, 10):
+        if self.param[key]['unit'] == 'kt':
+          graduation = 5
+        else:
+          graduation = 10
+          
+        for a in range(50, self.maxspeed + 1, graduation):
 
             alpha = self.zeroAngle + 30 + (a - 50) * delta
             dx = math.cos(math.radians(alpha - 90))
             dy = math.sin(math.radians(alpha - 90))
 
-            if (a % 50 == 0):
+            if (a % (5*graduation) == 0):
               R = 75
               font = QFont('Verdana', 12, QFont.Light)
               text = self.scene.addSimpleText(str(a), font)
@@ -148,9 +155,11 @@ class airspeedGauge(QGaugeView):
     def setValue(self, data):
       
       if "speed" in data:
-	
-        value = data["speed"]
-        speed = int(value * 1.852)
+
+        speed = int(data["speed"])
+        unit = self.param['speed']["unit"]
+        if unit == 'kmh':
+          speed = speed * 1.852
         delta = 300 / (self.maxspeed - 50)
         if (speed < 50): angle = 0
         elif (speed <= self.maxspeed): angle = 30 + (speed - 50) * delta
@@ -166,7 +175,7 @@ class accelerometerGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
         
         self.scene.setSceneRect(0,0,300,300)
@@ -274,7 +283,7 @@ class manifoldGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
         
         self.scene.setSceneRect(0,0,300,300)
@@ -366,7 +375,7 @@ class attitudeGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
         
         self.scene.setSceneRect(0,0,300,300)
@@ -416,7 +425,7 @@ class altitudeGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
@@ -475,7 +484,7 @@ class turnslipGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
@@ -524,7 +533,7 @@ class dgGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
@@ -556,7 +565,7 @@ class varioGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
@@ -604,7 +613,7 @@ class vorGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
@@ -680,7 +689,7 @@ class adfGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
@@ -742,7 +751,7 @@ class engineGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
         
         self.scene.setSceneRect(0,0,300,300)
@@ -793,7 +802,7 @@ class vacuumGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,200,200)
@@ -830,7 +839,7 @@ class fuelGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,200,200)
@@ -888,7 +897,7 @@ class oilGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,200,200)
@@ -964,7 +973,7 @@ class trimGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,150,275)
@@ -1019,7 +1028,7 @@ class switchPanel(QGaugeView):
         
     def initialize(self, data):
       
-      self.param = {}   
+      self.param = {}
       self.scene.clear()
         
       self.scene.setSceneRect(0,0,800,75)
@@ -1029,6 +1038,8 @@ class switchPanel(QGaugeView):
         
       font = QFont('Arial', 10, QFont.Light)
       bold = QFont('Arial', 15, QFont.Bold)
+      
+      self.power = 0
       
       for key in data:
   
@@ -1056,6 +1067,50 @@ class switchPanel(QGaugeView):
         
         self.setValue({key: data[key]['value']})
 
+    def display(self):
+      
+      for key in self.param:
+        
+        if ('item' in self.param[key]):
+          item = self.param[key]['item']
+          led = self.param[key]['led']
+          value = self.param[key]['value']
+        
+          if self.power:
+            if (value == 1): item.setPixmap(self.led[led])
+            else: item.setPixmap(self.led['gray'])
+          else:
+            item.setPixmap(self.led['gray'])
+
+    def setValue(self, data):
+      
+      for key in data:
+        
+        if key in self.param:
+
+          value = data[key]
+          self.param[key]['value'] = value
+          
+          if (key == 'power'):
+            self.power = data['power']
+        
+          elif (key == 'fps'):
+
+            self.param[key]['text'].setText(str(value))
+            if (value < 10):
+              self.param[key]['text'].setBrush(Qt.red)
+            elif (value < 20):
+              self.param[key]['text'].setBrush(Qt.yellow)
+            elif (value < 30):
+              self.param[key]['text'].setBrush(Qt.gray)
+            elif (value < 40):
+              self.param[key]['text'].setBrush(Qt.cyan)
+            else:
+              self.param[key]['text'].setBrush(Qt.green)
+
+      self.display()
+
+    '''
     def setValue(self, data):
       
       for key in data:
@@ -1086,6 +1141,7 @@ class switchPanel(QGaugeView):
             else: item.setPixmap(self.led['gray'])
             
           self.param[key]['value'] = value
+      '''
       
 class lightPanel(QGaugeView):
   
@@ -1109,7 +1165,7 @@ class lightPanel(QGaugeView):
         
     def initialize(self, data):
       
-      self.param = {}   
+      self.param = {}
       self.scene.clear()
         
       self.scene.setSceneRect(0,0,450,75)
@@ -1119,6 +1175,8 @@ class lightPanel(QGaugeView):
         
       font = QFont('Arial', 10, QFont.Light)
         
+      self.power = 0
+      
       for key in data:
   
         pos = data[key]['pos']
@@ -1138,19 +1196,39 @@ class lightPanel(QGaugeView):
         
         self.setValue({key: data[key]['value']})
 
+    def display(self):
+      
+      for key in self.param:
+        
+        item = self.param[key]['item']
+        led = self.param[key]['led']
+        value = self.param[key]['value']
+        
+        if self.power:
+          if (value == 1): item.setPixmap(self.led[led])
+          else: item.setPixmap(self.led['gray'])
+        else:
+          item.setPixmap(self.led['gray'])
+
     def setValue(self, data):
       
+      if 'power' in data:
+        self.power = data['power']
+        del data['power']
+        
       for key in data:
         
         if key in self.param:
-	  
-          item = self.param[key]['item']
-          led = self.param[key]['led']
+  
+          #item = self.param[key]['item']
+          #led = self.param[key]['led']
           value = data[key]
           self.param[key]['value'] = value
         
-          if (value == 1): item.setPixmap(self.led[led])
-          else: item.setPixmap(self.led['gray'])
+          #if (value == 1): item.setPixmap(self.led[led])
+          #else: item.setPixmap(self.led['gray'])
+          
+      self.display()
 
 
 class warnPanel(QGaugeView):
@@ -1270,7 +1348,7 @@ class radioPanel(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,505,425)
@@ -1414,124 +1492,12 @@ class radioPanel(QGaugeView):
         self.button.setPos(345,325)
         self.button.setTransformOriginPoint(QPoint(22,22))
         
-        #self.setCom({"power":0, "active":0, "stby":0})
-        #self.setNav({"power":0, "active":0, "stby":0})
-        #self.setXpdr({"power":0, "mode":0, "sett":0})
-        self.setValue({"power":0, "com.active":0, "com.stby":0, "nav.active":0, "nav.stby":0, "xpdr.mode":0, "xpdr.code":0})
-        
-    '''
-    def displayCom(self, channel):
-      
-      power = self.param['power']['value']
-
-      if power:
-          frequence = "%05d" % self.param['com'][channel]
-          n = int(frequence[:1])
-          self.com[channel][0].setPixmap(self.red[n])
-          n = int(frequence[1:2])
-          self.com[channel][1].setPixmap(self.red[n])
-          n = int(frequence[2:3])
-          self.com[channel][2].setPixmap(self.red[n])
-          n = int(frequence[3:4])
-          self.com[channel][3].setPixmap(self.red[n])
-          n = int(frequence[4:5])
-          self.com[channel][4].setPixmap(self.red[n])
-      else:
-        for i in range(5):
-          self.com[channel][i].setPixmap(self.space)
-
-    def setCom(self, value):
-      
-      if "power" in value:
-        power = value['power']
-        self.param['power']['value'] = power
-        
-      if "active" in value:
-        active = value["active"]
-        self.param['com']['active'] = active
-
-      if "stby" in value:
-        stby = value["stby"]
-        self.param['com']['stby'] = stby
-
-      self.displayCom('active')
-      self.displayCom('stby')
-      
-
-    def displayNav(self, channel):
-      
-      power = self.param['power']['value']
-
-      if power:
-          frequence = "%05d" % self.param['nav'][channel]
-          n = int(frequence[:1])
-          self.nav[channel][0].setPixmap(self.red[n])
-          n = int(frequence[1:2])
-          self.nav[channel][1].setPixmap(self.red[n])
-          n = int(frequence[2:3])
-          self.nav[channel][2].setPixmap(self.red[n])
-          n = int(frequence[3:4])
-          self.nav[channel][3].setPixmap(self.red[n])
-          n = int(frequence[4:5])
-          self.nav[channel][4].setPixmap(self.red[n])
-      else:
-        for i in range(5):
-          self.nav[channel][i].setPixmap(self.space)
-
-    def setNav(self, value):
-      
-      if "power" in value:
-        power = value['power']
-        self.param['power']['value'] = power
-        
-      if "active" in value:
-        active = value["active"]
-        self.param['nav']['active'] = active
-
-      if "stby" in value:
-        stby = value["stby"]
-        self.param['nav']['stby'] = stby
-
-      self.displayNav('active')
-      self.displayNav('stby')
-
-    def setXpdr(self, value):
-      
-      if "power" in value:
-        power = value['power']
-        self.param['power']['value'] = power
-        
-      if "sett" in value:
-        code = value["sett"]
-        self.param['xpdr']['code'] = code
-        
-      power = self.param['power']['value']
-      code = self.param['xpdr']['code']
-
-      if power:
-        code = "{:04d}".format(code)
-      else:
-        code = "{:04d}".format(8888)
-      n = int(code[:1])
-      self.xpdr['code'][0].setPixmap(self.white[n])
-      n = int(code[1:2])
-      self.xpdr['code'][1].setPixmap(self.white[n])
-      n = int(code[2:3])
-      self.xpdr['code'][2].setPixmap(self.white[n])
-      n = int(code[3:4])
-      self.xpdr['code'][3].setPixmap(self.white[n])
-
-      if "mode" in value:
-        mode = value["mode"]
-        self.param['xpdr']['mode'] = mode
-        self.button.setRotation(mode * 45)
-
-    '''
-    
+        self.setValue({"power":1, "com.active":0, "com.stby":0, "nav.active":0, "nav.stby":0, "xpdr.mode":0, "xpdr.code":0})
+            
     def display(self):
       
       for channel in ['active', 'stby']:
-	
+
         if self.power:
           frequence = "%05d" % self.param['com'][channel]
           n = int(frequence[:1])
@@ -1610,7 +1576,7 @@ class identPanel(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0, 0, 375, 75)
@@ -1637,7 +1603,7 @@ class magnetoGauge(QGaugeView):
   
     def initialize(self, data):
 
-        self.param = {}   
+        self.param = {}
         self.scene.clear()
 
         self.scene.setSceneRect(0,0,300,300)
