@@ -71,7 +71,7 @@ def populateLayout(parent, layout, index):
         #layout.addItem(spacer, 0, 0, 1, 4)
         
         layout.addWidget(parent.warn, 0, 0, 1, 3, Qt.AlignTop | Qt.AlignLeft)
-        parent.warn.initialize({'gene': {'pos':0, 'label':'Charge', 'led':'red', 'value':1}, 'oil': {'pos':1, 'label':'Huile', 'led':'red', 'value':1}, 'fuel': {'pos':2, 'label':'Essence', 'led':'red', 'value':1}, 'stall': {'pos':4, 'label':'Stall', 'led':'red', 'value':0}, 'flap': {'pos':6, 'label':'Volets', 'led':'gray', 'text': '2', 'value':0}})
+        parent.warn.initialize({'gene': {'pos':0, 'label':'Charge', 'led':'red', 'value':1}, 'oil': {'pos':1, 'label':'Huile', 'led':'red', 'value':1}, 'fuel': {'pos':2, 'label':'Essence', 'led':'red', 'value':1}, 'stall': {'pos':4, 'label':'Stall', 'led':'red', 'value':0}, 'flap': {'pos':6, 'label':'Volets', 'led':'gray', 'text': '3', 'value':0}})
 
         vbox = QGridLayout()
         vbox.setSpacing(20)
