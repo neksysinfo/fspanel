@@ -53,7 +53,7 @@ class fsSocket(QObject):
     switch = pyqtSignal([dict])		# batt, inter, mixt, pump, carb, gear, flap
     warn = pyqtSignal([dict])		# battery, gene, oil, fuel, flap, gear, stall
     trim = pyqtSignal([dict])		# trim
-    light = pyqtSignal([dict])		# nav, strobe, nav, taxi
+    light = pyqtSignal([dict])		# nav, strobe, land, taxi
     propeller = pyqtSignal([dict])	# prop
     magneto = pyqtSignal([dict])	# magneto
 
@@ -86,7 +86,7 @@ class fsSocket(QObject):
          "flow": { "signal": self.flow, "man": { "code": 43, "index": 0, "data": 0, "float": 0 }, "flow": { "code": 45, "index": 0, "data": 0, "float": 0 } },
          "fuel": { "signal": self.fuel, "power": { "code": 57, "index": 0, "data": 0 }, "fuel": { "code": 63, "index": 2, "data": 0 } },
          "switch": { "signal": self.switch, "power": { "code": 57, "index": 0, "data": 0 }, "gene": { "code": 58, "index": 0, "data": 0 }, "mixt": { "code": 29, "index": 0, "data": 0 }, "pump": { "code": 55, "index": 0, "data": 0 }, "carbheat": { "code": 30, "index": 0, "data": 0 }, "fps": { "code": 0, "index": 0, "data": 0, "float": 0 } },
-         "light": { "signal": self.light, "nav": { "code": 106, "index": 1, "data": 0 }, "strobe": { "code": 106, "index": 3, "data": 0 }, "land": { "code": 106, "index": 4, "data": 0 }, "taxi": { "code": 106, "index": 5, "data": 0 }, "speedbrake": { "code": 13, "index": 6, "data": 0 } },
+         "light": { "signal": self.light, "power": { "code": 57, "index": 0, "data": 0 }, "nav": { "code": 106, "index": 1, "data": 0 }, "strobe": { "code": 106, "index": 3, "data": 0 }, "landing": { "code": 106, "index": 4, "data": 0 }, "taxi": { "code": 106, "index": 5, "data": 0 }, "speedbrake": { "code": 13, "index": 6, "data": 0 } },
          "warn": { "signal": self.warn, "power": { "code": 57, "index": 0, "data": 0 }, "gene": { "code": 115, "index": 4, "data": 0 }, "oil": { "code": 49, "index": 0, "data": 0, "float": 0 }, "fuel": { "code": 51, "index": 0, "data": 0, "float": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 }, "gear": { "code": 14, "index": 0, "data": 0 }, "stall": { "code": 127, "index": 6, "data": 0 } },
          "magneto": { "signal": self.magneto, "mag": { "code": 32, "index": 0, "data": 0 } },
          "trim": { "signal": self.trim, "pitch": { "code": 13, "index": 0, "data": 0, "float": 0 }, "yaw": { "code": 13, "index": 2, "data": 0, "float": 0 } },
@@ -94,10 +94,11 @@ class fsSocket(QObject):
          #"propeller": { "signal": self.propeller, "prop": { "code": 28, "index": 0, "data": 0 } }
       }
 
-      self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # Create Datagram Socket (UDP)
-      self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # Make Socket Reusable
-      self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1) # Allow incoming broadcasts
-      self.sock.setblocking(True)                                     # Set socket to non-blocking mode (does not work: error)
+      self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)     # Create Datagram Socket (UDP)
+      self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # Make Socket Reusable
+      #self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1) # Make Socket Reusable
+      self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # Allow incoming broadcasts
+      self.sock.setblocking(True)                                      # Set socket to non-blocking mode (does not work: error)
       self.sock.bind(('', UDP_PORT))
 
       sel = bytes("DSEL0", "utf-8")
@@ -310,10 +311,24 @@ class fsSocket(QObject):
         self.sock.sendto(data_selection_packet, (UDP_SENDTO_IP, UDP_SENDTO_PORT))
 
 
+    def dataref(self, index, dataref):
+      dataref += '\0'
+      nr_trailing_spaces = 400 - len(dataref)
+
+      msg = "RREF" + '\0'
+      packedindex = pack('<i', index)
+      packedfrequency = pack('<i', 30)
+      msg += packedfrequency
+      msg += packedindex
+      msg += dataref
+      msg += ' ' * nr_trailing_spaces
+
+      print(msg)
+      
     def params(self):
       
       r = bytes("RREF0", "utf-8")
-      a = 5
+      a = 30
       b = 150
       c = bytes("sim/cockpit/gyros/dg_drift_ele_deg", "utf-8")
 
