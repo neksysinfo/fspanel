@@ -159,7 +159,7 @@ class airspeedGauge(QGaugeView):
         speed = int(data["speed"])
         unit = self.param['speed']["unit"]
         if unit == 'kmh':
-          speed = speed * 1.852
+          speed = int(speed * 1.852)
         delta = 300 / (self.maxspeed - 50)
         if (speed < 50): angle = 0
         elif (speed <= self.maxspeed): angle = 30 + (speed - 50) * delta
@@ -1203,10 +1203,12 @@ class lightPanel(QGaugeView):
         item = self.param[key]['item']
         led = self.param[key]['led']
         value = self.param[key]['value']
+        print ("%s %s %s" % (key, led, value))
         
         if self.power:
           if (value == 1): item.setPixmap(self.led[led])
           else: item.setPixmap(self.led['gray'])
+          print ("power on")
         else:
           item.setPixmap(self.led['gray'])
 
@@ -1220,6 +1222,7 @@ class lightPanel(QGaugeView):
         
         if key in self.param:
   
+          #print (key)
           #item = self.param[key]['item']
           #led = self.param[key]['led']
           value = data[key]
