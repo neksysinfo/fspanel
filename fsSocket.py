@@ -311,7 +311,7 @@ class fsSocket(QObject):
         self.sock.sendto(data_selection_packet, (UDP_SENDTO_IP, UDP_SENDTO_PORT))
 
 
-    def dataref(self, index, dataref):
+    def datarref(self, index, dataref):
       dataref += '\0'
       nr_trailing_spaces = 400 - len(dataref)
 
