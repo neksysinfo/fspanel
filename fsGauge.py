@@ -50,6 +50,141 @@ class QGaugeView(QGraphicsView):
 
 class airspeedGauge(QGaugeView):
   
+    def init(self, data):
+        
+        self.param = {}
+        self.setup(data)
+        #self.display()
+        #self.setValue({'speed':self.param['speed']['value']})
+        
+    def setup(self, data):
+        
+        if 'scale' in data:
+          self.param['scale'] = data['scale']['value']
+        else:
+          self.param['scale'] = 0.85
+        
+        if 'unit' in data:
+            self.unit = data['unit']
+        else:
+            self.unit = 'kmh'
+            
+        if 'speed' in data:
+            key = 'speed'
+            
+            if key not in self.param:
+                self.param[key] = {}
+                
+            if 'value' in data[key]:
+                self.param[key]['value'] = data[key]['value']
+            else:
+                self.param[key]['value'] = 0
+                
+            if 'vne' in data[key]:
+                self.param[key]['vs0'] = data[key]['vs0']
+                self.param[key]['vs1'] = data[key]['vs1']
+                self.param[key]['vfe'] = data[key]['vfe']
+                self.param[key]['vno'] = data[key]['vno']
+                self.param[key]['vne'] = data[key]['vne']
+            
+            if 'max' in data[key]:
+                self.maxspeed = data[key]['max']
+        
+        self.display()
+
+    def display(self):
+        
+        self.scene.clear()
+
+        scale = self.param['scale']
+        self.setTransform(QTransform().scale(scale, scale), False)
+
+        self.setRenderHint(QPainter.Antialiasing, True)
+        
+        pixmap = QPixmap('/var/fspanel/images/speed-plate.png')
+        self.scene.addPixmap(pixmap)
+        
+        self.zeroAngle = -180
+        
+        if self.unit == 'kt':
+          factor = 1
+          minspeed = 25
+          graduation = 5
+        else:
+          factor = 1.852
+          minspeed = 50
+          graduation = 10
+          
+        maxspeed =  int(self.maxspeed * factor)
+        delta = 300 / (maxspeed - minspeed)
+        
+        vs0 = int(self.param['speed']['vs0'] * factor)
+        vs1 = int(self.param['speed']['vs1'] * factor)
+        vfe = int(self.param['speed']['vfe'] * factor)
+        vno = int(self.param['speed']['vno'] * factor)
+        vne = int(self.param['speed']['vne'] * factor)
+        
+        path = QPainterPath()
+        pen = QPen(Qt.white, 12, Qt.SolidLine)
+        a1 = 270 - ((vfe - minspeed) * delta + 30)
+        a2 = (vfe - vs0) * delta
+        path.arcMoveTo(40, 40, 220, 220, a1)
+        path.arcTo(40, 40, 220, 220, a1, a2)      
+        self.scene.addPath(path, pen)
+        
+        path = QPainterPath()
+        pen = QPen(Qt.green, 10, Qt.SolidLine)
+        a1 = 270 - ((vno - minspeed) * delta + 30)
+        a2 = (vno - vs1) * delta
+        path.arcMoveTo(50, 50, 200, 200, a1)
+        path.arcTo(50, 50, 200, 200, a1, a2)
+        self.scene.addPath(path, pen)
+      
+        path = QPainterPath()
+        pen = QPen(Qt.yellow, 10, Qt.SolidLine)
+        a1 = 270 - ((vne - minspeed) * delta + 30)
+        a2 = (vne - vno) * delta
+        path.arcMoveTo(50, 50, 200, 200, a1)
+        path.arcTo(50, 50, 200, 200, a1, a2)
+        self.scene.addPath(path, pen)
+        
+        for a in range(minspeed, maxspeed + 1, graduation):
+
+            alpha = self.zeroAngle + 30 + (a - minspeed) * delta
+            dx = math.cos(math.radians(alpha - 90))
+            dy = math.sin(math.radians(alpha - 90))
+
+            if (a % (5*graduation) == 0):
+              R = 75
+              font = QFont('Verdana', 12, QFont.Light)
+              text = self.scene.addSimpleText(str(a), font)
+              text.setPos(135 + 50 * dx, 140 + 50 * dy)
+              text.setBrush(Qt.white)
+            else:
+              R = 90
+              
+            if (a == vne):
+              R = 75
+              pen = QPen(Qt.red, 3, Qt.SolidLine)
+            else:
+              pen = QPen(Qt.white, 3, Qt.SolidLine)
+
+            path = QPainterPath()
+            path.moveTo(150 + 110 * dx, 150 + 110 * dy)
+            path.lineTo(150 + R * dx, 150 + R * dy)
+            self.scene.addPath(path, pen)
+            
+        pixmap = QPixmap('/var/fspanel/images/speed-dial.png')
+        self.needle = self.scene.addPixmap(pixmap)
+        self.needle.setTransformOriginPoint(QPoint(150,150))
+        
+        font = QFont('Arial', 14, QFont.Light)
+        self.speed = self.scene.addSimpleText('0', font)
+        self.speed.setPos(135,230)
+        self.speed.setBrush(Qt.yellow)
+        
+        self.setValue({'speed':self.param['speed']['value']})
+
     def initialize(self, data):
       
         self.param = {}
@@ -81,7 +216,7 @@ class airspeedGauge(QGaugeView):
         vfe = data[key]['vfe']
         vno = data[key]['vno']
         vne = data[key]['vne']
-        vne = data[key]['vne']
+
         self.maxspeed = data[key]['max']
         
         delta = 300 / (self.maxspeed - 50)
@@ -157,18 +292,22 @@ class airspeedGauge(QGaugeView):
       if "speed" in data:
 
         speed = int(data["speed"])
-        unit = self.param['speed']["unit"]
-        if unit == 'kmh':
-          speed = int(speed * 1.852)
-        delta = 300 / (self.maxspeed - 50)
-        if (speed < 50): angle = 0
-        elif (speed <= self.maxspeed): angle = 30 + (speed - 50) * delta
+        #unit = self.param['speed']["unit"]
+        if self.unit == 'kmh':
+            speed = int(speed * 1.852)
+            minspeed = 50
+        else:
+            minspeed = 25
+            
+        delta = 300 / (self.maxspeed - minspeed)
+        if (speed < minspeed): angle = 0
+        elif (speed <= self.maxspeed): angle = 30 + (speed - minspeed) * delta
         else: angle = 300
         
         self.needle.setRotation(self.zeroAngle + angle)
         self.speed.setText('{:>3}'.format(speed))
 
-        self.param['speed']['value'] = speed
+        self.param['speed']['value'] = int(data["speed"])
 
 
 class accelerometerGauge(QGaugeView):
@@ -1333,6 +1472,12 @@ class warnPanel(QGaugeView):
         else:
             item.setPixmap(self.led['gray'])
 
+    def setFlaps(self, value):
+      
+      self.param['flap']['extra'] = value
+
+      self.display()
+      
     def setValue(self, data):
       
       if 'power' in data:

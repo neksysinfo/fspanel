@@ -51,7 +51,7 @@ class fsSocket(QObject):
     flow = pyqtSignal([dict])		# man, flow
     fuel = pyqtSignal([dict])		# fuel
     switch = pyqtSignal([dict])		# batt, inter, mixt, pump, carb, gear, flap
-    warn = pyqtSignal([dict])		# battery, gene, oil, fuel, flap, gear, stall
+    warn = pyqtSignal([dict])		# battery, gene, oil, fuel, flap, brake, gear, stall
     trim = pyqtSignal([dict])		# trim
     light = pyqtSignal([dict])		# nav, strobe, land, taxi
     propeller = pyqtSignal([dict])	# prop
@@ -87,7 +87,7 @@ class fsSocket(QObject):
          "fuel": { "signal": self.fuel, "power": { "code": 57, "index": 0, "data": 0 }, "fuel": { "code": 63, "index": 2, "data": 0 } },
          "switch": { "signal": self.switch, "power": { "code": 57, "index": 0, "data": 0 }, "gene": { "code": 58, "index": 0, "data": 0 }, "mixt": { "code": 29, "index": 0, "data": 0 }, "pump": { "code": 55, "index": 0, "data": 0 }, "carbheat": { "code": 30, "index": 0, "data": 0 }, "fps": { "code": 0, "index": 0, "data": 0, "float": 0 } },
          "light": { "signal": self.light, "power": { "code": 57, "index": 0, "data": 0 }, "nav": { "code": 106, "index": 1, "data": 0 }, "strobe": { "code": 106, "index": 3, "data": 0 }, "landing": { "code": 106, "index": 4, "data": 0 }, "taxi": { "code": 106, "index": 5, "data": 0 }, "speedbrake": { "code": 13, "index": 6, "data": 0 } },
-         "warn": { "signal": self.warn, "power": { "code": 57, "index": 0, "data": 0 }, "gene": { "code": 115, "index": 4, "data": 0 }, "oil": { "code": 49, "index": 0, "data": 0, "float": 0 }, "fuel": { "code": 51, "index": 0, "data": 0, "float": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 }, "gear": { "code": 14, "index": 0, "data": 0 }, "stall": { "code": 127, "index": 6, "data": 0 } },
+         "warn": { "signal": self.warn, "power": { "code": 57, "index": 0, "data": 0 }, "gene": { "code": 115, "index": 4, "data": 0 }, "oil": { "code": 49, "index": 0, "data": 0, "float": 0 }, "fuel": { "code": 51, "index": 0, "data": 0, "float": 0 }, "flap": { "code": 13, "index": 3, "data": 0, "float": 0 }, "brake": { "code": 14, "index": 1, "data": 0 }, "gear": { "code": 14, "index": 0, "data": 0 }, "stall": { "code": 127, "index": 6, "data": 0 } },
          "magneto": { "signal": self.magneto, "mag": { "code": 32, "index": 0, "data": 0 } },
          "trim": { "signal": self.trim, "pitch": { "code": 13, "index": 0, "data": 0, "float": 0 }, "yaw": { "code": 13, "index": 2, "data": 0, "float": 0 } },
          #"gear": { "signal": self.gear, "N": { "code": 67, "index": 0, "data": 0 }, "R": { "code": 67, "index": 1, "data": 0 }, "L": { "code": 67, "index": 2, "data": 0 } },
@@ -116,7 +116,7 @@ class fsSocket(QObject):
         #pass
 
       rotary = fsEncoder(self.send)
-      self.params()
+      #self.params()
       
 
     @pyqtSlot()

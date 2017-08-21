@@ -82,6 +82,8 @@ class Main(QWidget):
         self.debug.appendText('error test', 'error')
         
         self.stack = QStackedLayout(self)
+        #print (self.stack.parent.vor.param)
+        
         for i in range(NUM_LAYOUT):
           page = QWidget()
           layout = QGridLayout()
@@ -104,7 +106,8 @@ class Main(QWidget):
         elif (key == Qt.Key_5):
           self.b = (self.b + 1) % 2
           self.switch.setValue({'power':self.b})
-          #self.warn.setValue({'ower':self.b,'gene':1,'oil':1,'fuel':1,'gear':1})
+          self.light.setValue({'power':self.b})
+          #self.warn.setValue({'power':self.b,'gene':1,'oil':1,'fuel':1,'gear':1})
         elif (key == Qt.Key_D):
           self.setFSLayout(0)
         elif (key == Qt.Key_Space):
@@ -115,20 +118,29 @@ class Main(QWidget):
           self.setPanel(-1)
         elif (key == Qt.Key_9):
           self.setPanel(1)
-        '''
+        
+        elif (key == Qt.Key_B):
+          self.airspeed.setup({'unit':'kt'})
+        elif (key == Qt.Key_N):
+          self.airspeed.setup({'unit':'kmh'})
+
+        elif (key == Qt.Key_C):
+          self.light.setValue({'strobe':1})
         elif (key == Qt.Key_U):
-          self.socket.send("adf", "outer", -1)
+          self.socket.send("com", "outer", -1)
         elif (key == Qt.Key_I):
-          self.socket.send("adf", "outer", 1)
+          self.socket.send("com", "outer", 1)
         elif (key == Qt.Key_O):
-          self.socket.send("adf", "inner", -1)
+          self.socket.send("com", "inner", -1)
         elif (key == Qt.Key_P):
-          self.socket.send("adf", "inner", 1)
+          self.socket.send("com", "inner", 1)
+        elif (key == Qt.Key_K):
+          self.socket.send("com", "button", 1)
         elif (key == Qt.Key_L):
-          self.socket.send("adf", "coder", -1)
+          self.socket.send("nav", "coder", -1)
         elif (key == Qt.Key_M):
-          self.socket.send("adf", "coder", 1)
-        '''
+          self.socket.send("nav", "coder", 1)
+        
 
     def setBackground(self, pic):
         palette = QPalette()
@@ -145,6 +157,7 @@ class Main(QWidget):
 
     def setFSLayout(self, index):
         self.activeLayout = index
+        #self.stack.setCurrentIndex(index)
         layout = self.stack.widget(index).layout()
         populateLayout(self, layout, index)
         self.stack.setCurrentIndex(index)
@@ -156,9 +169,6 @@ class Main(QWidget):
         socket.switch.connect(self.switch.setValue)
         socket.light.connect(self.light.setValue)
         socket.warn.connect(self.warn.setValue)
-        #socket.com.connect(self.radio.setCom)
-        #socket.nav.connect(self.radio.setNav)
-        #socket.xpdr.connect(self.radio.setXpdr)
         socket.radio.connect(self.radio.setValue)
         socket.airspeed.connect(self.airspeed.setValue)
         socket.load.connect(self.accelerometer.setValue)
