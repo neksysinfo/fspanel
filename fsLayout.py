@@ -43,7 +43,7 @@ def populateLayout(parent, layout, index):
         layout.addWidget(parent.airspeed, 1, 0, Qt.AlignBottom)
         #parent.airspeed.initialize({'speed': {'vs0': 0, 'vs1': 120, 'vfe': 0, 'vno': 285, 'vne': 410, 'max': 410}})
         #parent.airspeed.init({'speed': {'vs0': 0, 'vs1': 65, 'vfe': 0, 'vno': 155, 'vne': 220, 'max': 220}})
-        parent.airspeed.init({'speed': {'vs0': 46, 'vs1': 53, 'vfe': 86, 'vno': 162, 'vne': 183, 'max': 183}})
+        parent.airspeed.init({'speed': {'vs0': 46, 'vs1': 53, 'vfe': 86, 'vno': 162, 'vne': 183, 'max': 190}})
         layout.addWidget(parent.accelerometer, 1, 1, Qt.AlignBottom)
         layout.addWidget(parent.altitude, 1, 2, Qt.AlignBottom)
         
@@ -137,7 +137,7 @@ def populateLayout(parent, layout, index):
         
         layout.addWidget(parent.airspeed, 1, 0, Qt.AlignBottom)
         #parent.airspeed.initialize({'speed': {'vs0': 85, 'vs1': 100, 'vfe': 170, 'vno': 260, 'vne': 310, 'max': 310}})
-        parent.airspeed.init({'speed': {'vs0': 85, 'vs1': 100, 'vfe': 170, 'vno': 260, 'vne': 310, 'max': 310}})
+        parent.airspeed.init({'speed': {'vs0': 47, 'vs1': 53, 'vfe': 92, 'vno': 140, 'vne': 166, 'max': 170}})
         layout.addWidget(parent.attitude, 1, 1, Qt.AlignBottom)
         layout.addWidget(parent.altitude, 1, 2, Qt.AlignBottom)
         
@@ -183,7 +183,7 @@ def populateLayout(parent, layout, index):
         
         layout.addWidget(parent.airspeed, 1, 0, Qt.AlignBottom)
         #parent.airspeed.initialize({'scale': {'value': 0.85}, 'speed': {'vs0': 80, 'vs1': 90, 'vfe': 150, 'vno': 210, 'vne': 240, 'max': 250}})
-        parent.airspeed.init({'scale': {'value': 0.85}, 'speed': {'vs0': 43, 'vs1': 48, 'vfe': 81, 'vno': 113, 'vne': 130, 'max': 135}})
+        parent.airspeed.init({'scale': {'value': 0.85}, 'speed': {'vs0': 44, 'vs1': 51, 'vfe': 81, 'vno': 116, 'vne': 145, 'max': 150}})
         layout.addWidget(parent.attitude, 1, 1, Qt.AlignBottom)
         layout.addWidget(parent.altitude, 1, 2, Qt.AlignBottom)
         
