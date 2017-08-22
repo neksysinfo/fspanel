@@ -96,6 +96,7 @@ class airspeedGauge(QGaugeView):
         
         self.scene.clear()
 
+        self.scene.setSceneRect(0,0,300,300)
         scale = self.param['scale']
         self.setTransform(QTransform().scale(scale, scale), False)
 
@@ -294,15 +295,18 @@ class airspeedGauge(QGaugeView):
         speed = int(data["speed"])
         #unit = self.param['speed']["unit"]
         if self.unit == 'kmh':
-            speed = int(speed * 1.852)
+            factor = 1.852
             minspeed = 50
         else:
+            factor = 1
             minspeed = 25
             
-        delta = 300 / (self.maxspeed - minspeed)
+        speed = int(speed * factor)
+        maxspeed =  int(self.maxspeed * factor)
+        delta = 300 / (maxspeed - minspeed)
         if (speed < minspeed): angle = 0
-        elif (speed <= self.maxspeed): angle = 30 + (speed - minspeed) * delta
-        else: angle = 300
+        elif (speed < maxspeed): angle = 30 + (speed - minspeed) * delta
+        else: angle = 330
         
         self.needle.setRotation(self.zeroAngle + angle)
         self.speed.setText('{:>3}'.format(speed))
